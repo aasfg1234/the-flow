@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v3.7 Forgiving)</title>
+    <title>流逝：生存挑戰 (v3.9 Expanded)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -363,7 +363,7 @@
             
             updateBtnStyle();
             
-            // 關鍵修改：容錯率增加到 + 40
+            // 判定寬容度：radius + 40
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
@@ -485,9 +485,12 @@
                 let list = data.scores || [];
                 let gCount = (data.global_play_count || 0) + 1;
                 const sig = generateSignature(playerName, newScore);
+                
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
-                list = list.slice(0, 200); 
+                
+                // === 關鍵修改：容量擴充至 100 ===
+                list = list.slice(0, 100); 
 
                 log(`寫入: Rank=${list.length}, Global=${gCount}`);
                 
