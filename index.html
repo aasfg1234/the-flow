@@ -15,7 +15,7 @@
             --font-serif: 'Noto Serif TC', serif;
         }
 
-        /* 核心防縮放與佈局鎖定 */
+        /* 禁止縮放與回彈效果 */
         html, body { 
             position: fixed; width: 100%; height: 100%; 
             overflow: hidden; touch-action: none; 
@@ -36,7 +36,6 @@
             transition: transform 0.1s linear; will-change: transform;
         }
 
-        /* 排行榜 UI */
         #leaderboard {
             position: absolute; bottom: 40px;
             background: rgba(255, 255, 255, 0.4);
@@ -53,7 +52,6 @@
             display: flex; justify-content: space-between; letter-spacing: 3px;
         }
 
-        /* 核心按鈕 */
         #btn {
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -120,7 +118,7 @@
     <div id="btn">觸碰</div>
 
     <script>
-        // 1. 強力禁止 iOS 雙擊放大
+        // 徹底阻斷 iOS 雙擊放大
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
@@ -128,9 +126,8 @@
             lastTouchEnd = now;
         }, false);
 
-        // 2. 設定：新的時空 (BASKET_NAME 已更改)
         const PANTRY_ID = "6e8005ef-01b2-48b0-93e8-0e2bb6c80702"; 
-        const BASKET_NAME = "Rank_NewEra"; 
+        const BASKET_NAME = "Rank_v1"; 
 
         const btn = document.getElementById('btn');
         const timerDisplay = document.getElementById('timer');
@@ -139,7 +136,6 @@
         const nameModal = document.getElementById('name-modal');
         const inputName = document.getElementById('playerNameInput');
         const roachLayer = document.getElementById('roach-layer');
-        const zenBg = document.getElementById('zen-bg');
 
         let playerName = localStorage.getItem('lastPlayerName') || "";
         if(playerName) inputName.value = playerName;
@@ -149,8 +145,7 @@
         let state = {
             isPlaying: false, startTime: 0,
             btnX: 0, btnY: 0, targetX: 0, targetY: 0,
-            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: CFG.startRadius,
-            breathAngle: 0
+            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: CFG.startRadius
         };
         let loopId = null, lastFrameTime = 0;
 
@@ -192,18 +187,12 @@
             const elapsed = (Date.now() - state.startTime) / 1000;
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
 
-            // 背景呼吸位移
-            state.breathAngle += dt * 0.5;
-            zenBg.style.transform = `scale(${1 + Math.sin(state.breathAngle) * 0.05}) rotate(${Math.sin(state.breathAngle * 0.7) * 2}deg)`;
-
-            // 按鈕隨機目標
             if (Math.hypot(state.targetX - state.btnX, state.targetY - state.btnY) < 50 || Math.random() < 0.02) {
                 const margin = state.currentRadius + 30;
                 state.targetX = margin + Math.random() * (window.innerWidth - margin * 2);
                 state.targetY = margin + Math.random() * (window.innerHeight - margin * 2);
             }
 
-            // 物理滑行
             const dx = state.targetX - state.btnX, dy = state.targetY - state.btnY, dist = Math.hypot(dx, dy);
             const targetVX = (dx / dist || 0) * (1.5 + (elapsed / 8)) * 60;
             const targetVY = (dy / dist || 0) * (1.5 + (elapsed / 8)) * 60;
@@ -212,15 +201,12 @@
             state.btnX += state.vx * dt;
             state.btnY += state.vy * dt;
 
-            // 圓圈漸縮
             state.currentRadius = (elapsed < CFG.shrinkTime) ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
             updateBtnStyle();
 
-            // 蟑螂干擾
             if (elapsed > 10 && Math.random() < 0.015 && roaches.length < 35) roaches.push(new Roach());
             roaches = roaches.filter(r => r.update(dt) ? true : (r.destroy(), false));
 
-            // 判定手指是否脫離圓圈 (加了 15px 寬容度防止靈敏度過高)
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 15) {
                 gameOver(elapsed);
                 return;
@@ -264,7 +250,6 @@
             destroy() { if(this.el.parentNode) this.el.parentNode.removeChild(this.el); }
         }
 
-        // 事件監聽 (全域覆蓋)
         window.addEventListener('touchstart', startGame, {passive: false});
         window.addEventListener('mousedown', startGame);
         window.addEventListener('touchmove', (e) => {
@@ -274,7 +259,6 @@
         window.addEventListener('touchend', () => state.isPlaying && gameOver((Date.now() - state.startTime) / 1000));
         window.addEventListener('mouseup', () => state.isPlaying && gameOver((Date.now() - state.startTime) / 1000));
 
-        // 排行榜通訊
         function loadScores() {
             fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`).then(res => res.json())
             .then(data => {
