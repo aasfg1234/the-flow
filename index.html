@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v3.2 System Crash)</title>
+    <title>流逝：生存挑戰 (v3.4 No Personal Count)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -144,7 +144,6 @@
             letter-spacing: 1px; font-family: sans-serif; z-index: 60;
             text-align: right;
         }
-        .play-count { color: var(--sage-green); font-weight: bold; margin-left: 5px; }
         .global-count { color: var(--muted-gold); margin-left: 5px; }
 
         /* === 層級 100：蟑螂層 === */
@@ -156,10 +155,11 @@
             contain: layout style; transition: transform 0.1s linear; 
         }
 
-        /* === 新增：系統錯誤彈窗樣式 === */
+        /* === 層級 40：系統錯誤彈窗 === */
         #error-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 150; pointer-events: none; overflow: hidden;
+            z-index: 40; 
+            pointer-events: none; overflow: hidden;
         }
         .error-popup {
             position: absolute;
@@ -251,12 +251,11 @@
         const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg'), roachLayer = document.getElementById('roach-layer'), bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
         const scoreList = document.getElementById('scoreList'), nameModal = document.getElementById('name-modal'), inputName = document.getElementById('playerNameInput'), idDisplay = document.getElementById('player-id-display');
         const statusLight = document.getElementById('status-light'), debugLog = document.getElementById('debug-log');
-        // 新增錯誤層
         const errorLayer = document.getElementById('error-layer');
 
         let isMuted = true; bgm.volume = 0.6; bgm.muted = true;
         let playerName = localStorage.getItem('lastPlayerName') || "";
-        let playCount = parseInt(localStorage.getItem('roach_playCount') || 0);
+        // 移除了 playCount
         let globalPlayCount = 0; 
         let isSubmitting = false;
 
@@ -287,7 +286,6 @@
             vx: 0, vy: 0, 
             fingerX: 0, fingerY: 0, currentRadius: CFG.startRadius,
             btnOpacity: 0.9, fadeMode: 0, fadeFloor: 0.4,
-            // 新增：下一次觸發錯誤的時間
             nextErrorTime: 7 
         };
         let loopId = null;
@@ -304,7 +302,8 @@
         }, 500);
 
         function updateIDDisplay() {
-            idDisplay.innerHTML = `${playerName} <span class="play-count">· 個人: ${playCount}</span><span class="global-count">· 世界: ${globalPlayCount}</span>`;
+            // 只顯示世界計數
+            idDisplay.innerHTML = `${playerName} <span class="global-count">· 世界: ${globalPlayCount}</span>`;
         }
 
         function saveName() {
@@ -331,8 +330,6 @@
             
             if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && roachLayer.childElementCount < CFG.maxRoaches) spawnRoach();
             
-            // === 系統崩潰邏輯 ===
-            // 7秒後開始，每15秒觸發一次 (7, 22, 37...)
             if (elapsed > state.nextErrorTime) {
                 spawnError();
                 state.nextErrorTime += 15;
@@ -370,25 +367,16 @@
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
 
-        // === 產生系統錯誤視窗 ===
         function spawnError() {
-            if (navigator.vibrate) navigator.vibrate(200); // 震動一下提醒
+            if (navigator.vibrate) navigator.vibrate(200); 
             const err = document.createElement('div');
             err.className = 'error-popup';
             err.innerHTML = `<h4>⚠️ SYSTEM ERROR</h4>崩潰即將重啟<br>Code: 0x${Math.floor(Math.random()*9999).toString(16)}`;
-            
-            // 隨機位置
             const x = Math.random() * (window.innerWidth - 200);
             const y = Math.random() * (window.innerHeight - 100);
-            err.style.left = x + 'px';
-            err.style.top = y + 'px';
-            
+            err.style.left = x + 'px'; err.style.top = y + 'px';
             errorLayer.appendChild(err);
-            
-            // 3秒後自動消失
-            setTimeout(() => {
-                if(err.parentNode) err.remove();
-            }, 3000);
+            setTimeout(() => { if(err.parentNode) err.remove(); }, 3000);
         }
 
         function spawnRoach() { 
@@ -418,7 +406,7 @@
             const p = e.touches ? e.touches[0] : e; state.fingerX = p.clientX; state.fingerY = p.clientY;
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius) return;
             
-            playCount++; localStorage.setItem('roach_playCount', playCount);
+            // 移除了 playCount++
             updateIDDisplay();
             state.isPlaying = true; state.startTime = Date.now();
             msgDisplay.style.opacity = '0'; btn.innerText = ""; btn.style.color = "transparent"; 
@@ -440,10 +428,9 @@
             state.targetX = state.btnX; state.targetY = state.btnY; state.currentRadius = CFG.startRadius;
             state.btnOpacity = 0.9; state.fadeMode = 0; 
             
-            // 重置
             state.nextErrorTime = 7;
             roachLayer.innerHTML = ''; 
-            errorLayer.innerHTML = ''; // 清除錯誤視窗
+            errorLayer.innerHTML = ''; 
             msgDisplay.style.opacity = '0';
             
             btn.style.backgroundColor = "var(--sage-green)"; btn.style.boxShadow = "0 10px 30px rgba(141, 163, 153, 0.4)";
