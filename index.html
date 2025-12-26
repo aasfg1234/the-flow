@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：理智磨損版</title>
+    <title>流逝：生存挑戰</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -12,27 +12,29 @@
             --ink-black: #2c2c2c;
             --muted-gold: #c7b299;
             --sage-green: #8da399;
-            --dusty-pink: #d8c3c3;
             --font-serif: 'Noto Serif TC', serif;
         }
 
+        /* 徹底禁止網頁彈性滾動與縮放 */
+        html, body { 
+            position: fixed; width: 100%; height: 100%; 
+            overflow: hidden; touch-action: none; 
+        }
+
         body { 
-            margin: 0; overflow: hidden; background: var(--paper-bg); 
+            margin: 0; background: var(--paper-bg); 
             font-family: var(--font-serif);
             user-select: none; -webkit-user-select: none;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; color: var(--ink-black);
-            position: relative;
-            touch-action: none; -webkit-touch-callout: none;
+            color: var(--ink-black);
         }
 
         #zen-bg {
             position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            z-index: 0; overflow: hidden;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-            transition: transform 0.1s linear; will-change: transform;
+            z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
         }
 
+        /* 音效開關 */
         #audio-ctrl {
             position: absolute; bottom: 30px; right: 30px;
             z-index: 210; width: 44px; height: 44px;
@@ -46,9 +48,7 @@
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             position: absolute; z-index: 50; top: 0; left: 0; 
             opacity: 0; pointer-events: none; color: #fff;
-            background: var(--sage-green);
-            box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
-            will-change: transform;
+            background: var(--sage-green); box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
             writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 5px;
         }
 
@@ -68,21 +68,19 @@
             position: absolute; inset: 0; background: var(--paper-bg); z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
+
         input { 
             background: transparent; border: none; border-bottom: 1px solid #ccc;
             padding: 10px; font-size: 20px; text-align: center; width: 200px; margin-bottom: 30px;
             outline: none; font-family: var(--font-serif);
         }
-        button { padding: 10px 40px; border-radius: 50px; border: 1px solid #333; background: none; font-family: var(--font-serif); cursor: pointer;}
+
+        button { padding: 10px 40px; border-radius: 50px; border: 1px solid #333; background: none; font-family: var(--font-serif); }
+
         .roach { position: absolute; z-index: 100; font-size: 40px; pointer-events: none; }
     </style>
 </head>
-<body oncontextmenu="return false;">
-
-    <audio id="bgm" loop>
-        <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Kevin_MacLeod/Classical_Sampler/Kevin_MacLeod_-_Erik_Satie_Gymnopedie_No_1.mp3" type="audio/mpeg">
-    </audio>
-
+<body>
     <div id="zen-bg"></div>
     <div id="roach-layer"></div>
 
@@ -98,16 +96,15 @@
     <div id="btn">觸碰</div>
 
     <script>
-        // 1. 防止雙擊放大
+        // 防止雙擊放大 (iOS 必備)
         let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) e.preventDefault();
+        document.addEventListener('touchend', function (event) {
+            let now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) { event.preventDefault(); }
             lastTouchEnd = now;
         }, false);
 
         const btn = document.getElementById('btn');
-        const bgm = document.getElementById('bgm');
         const timerDisplay = document.getElementById('timer');
         const msgDisplay = document.getElementById('msg');
         const nameModal = document.getElementById('name-modal');
@@ -115,46 +112,44 @@
         const roachLayer = document.getElementById('roach-layer');
 
         let isMuted = true;
-        let playerName = "";
-        
-        // 音訊引擎初始化
-        bgm.volume = 0.6;
-        bgm.preservesPitch = false; 
+        let playerName = localStorage.getItem('lastPlayerName') || "";
+        if(playerName) document.getElementById('playerNameInput').value = playerName;
 
         let state = {
             isPlaying: false, startTime: 0,
             btnX: 0, btnY: 0, targetX: 0, targetY: 0,
-            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: 130,
-            nextAudioEvent: 0, eventEndTime: 0
+            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: 130
         };
 
         function toggleAudio() {
             isMuted = !isMuted;
             audioCtrl.innerText = isMuted ? "🔇" : "🔊";
-            if (!isMuted && state.isPlaying) bgm.play().catch(()=>{});
-            else bgm.pause();
+            // 這裡可以加入啟動音效 Context 的邏輯
         }
 
         function saveName() {
-            playerName = document.getElementById('playerNameInput').value.trim() || "無名者";
+            let val = document.getElementById('playerNameInput').value.trim();
+            if(!val) return;
+            playerName = val;
+            localStorage.setItem('lastPlayerName', playerName);
             nameModal.style.display = 'none';
             resetState();
-            if(!isMuted) bgm.play().catch(()=>{});
         }
 
         function resetState() {
-            const vw = window.innerWidth, vh = window.innerHeight;
-            state.btnX = vw / 2; state.btnY = vh / 2;
-            state.targetX = state.btnX; state.targetY = state.btnY;
-            state.vx = 0; state.vy = 0; state.currentRadius = 130;
-            state.nextAudioEvent = 0; state.eventEndTime = 0;
+            state.btnX = window.innerWidth / 2;
+            state.btnY = window.innerHeight / 2;
+            state.targetX = state.btnX;
+            state.targetY = state.btnY;
+            state.vx = 0; state.vy = 0;
+            state.currentRadius = 130;
+            state.isPlaying = false;
             
             roachLayer.innerHTML = '';
             msgDisplay.style.opacity = '0';
             btn.style.opacity = 0.9;
             btn.style.pointerEvents = 'auto';
             btn.innerText = "觸碰";
-            bgm.playbackRate = 1.0;
             updateBtnStyle();
         }
 
@@ -167,80 +162,48 @@
 
         function gameLoop() {
             if (!state.isPlaying) return;
-            const now = Date.now();
-            const elapsed = (now - state.startTime) / 1000;
+            const elapsed = (Date.now() - state.startTime) / 1000;
             timerDisplay.innerText = elapsed.toFixed(2);
 
-            // === 音效扭曲邏輯 (5秒後啟動) ===
-            if (!isMuted && elapsed > 5) {
-                if (now > state.nextAudioEvent && now > state.eventEndTime) {
-                    // 切換頻率變多：每 1~3 秒觸發一次
-                    state.nextAudioEvent = now + (1000 + Math.random() * 2000);
-                    // 持續時間：1~2.5 秒
-                    const duration = 1000 + Math.random() * 1500;
-                    state.eventEndTime = now + duration;
-                    
-                    // 隨機變速：0.4x 到 1.8x
-                    bgm.playbackRate = Math.random() < 0.5 ? (0.4 + Math.random() * 0.3) : (1.4 + Math.random() * 0.4);
-                }
-                
-                // 恢復正常速
-                if (now > state.eventEndTime && bgm.playbackRate !== 1.0) {
-                    bgm.playbackRate = 1.0;
-                }
-            }
-
-            // 移動邏輯
-            if (Math.hypot(state.targetX - state.btnX, state.targetY - state.btnY) < 50 || Math.random() < 0.02) {
+            // 移動邏輯 (簡化版)
+            if (Math.hypot(state.targetX - state.btnX, state.targetY - state.btnY) < 30 || Math.random() < 0.02) {
                 state.targetX = 100 + Math.random() * (window.innerWidth - 200);
                 state.targetY = 100 + Math.random() * (window.innerHeight - 200);
             }
-            state.btnX += (state.targetX - state.btnX) * (0.02 + elapsed/2000);
-            state.btnY += (state.targetY - state.btnY) * (0.02 + elapsed/2000);
+            state.btnX += (state.targetX - state.btnX) * 0.03;
+            state.btnY += (state.targetY - state.btnY) * 0.03;
 
-            if (state.currentRadius > 65) state.currentRadius -= 0.02;
+            // 縮圈
+            if (state.currentRadius > 60) state.currentRadius -= 0.1;
 
             updateBtnStyle();
 
-            // 蟑螂生成 (10秒後)
-            if (elapsed > 10 && Math.random() < 0.02 && roachLayer.childElementCount < 30) {
-                spawnRoach();
-            }
-
-            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 15) {
+            // 碰撞判定
+            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 20) {
                 gameOver(elapsed);
                 return;
             }
             requestAnimationFrame(gameLoop);
         }
 
-        function spawnRoach() {
-            const r = document.createElement('div');
-            r.className = 'roach'; r.innerText = '🪳';
-            r.style.left = Math.random() * 100 + '%';
-            r.style.top = Math.random() * 100 + '%';
-            roachLayer.appendChild(r);
-            setTimeout(() => r.remove(), 4000);
-        }
-
         function startGame(e) {
             if (state.isPlaying) return;
             const p = e.touches ? e.touches[0] : e;
             state.fingerX = p.clientX; state.fingerY = p.clientY;
+            
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius) return;
 
-            state.isPlaying = true; state.startTime = Date.now();
+            state.isPlaying = true;
+            state.startTime = Date.now();
             btn.innerText = "";
             requestAnimationFrame(gameLoop);
         }
 
         function gameOver(score) {
             state.isPlaying = false;
-            bgm.playbackRate = 1.0;
-            msgDisplay.innerHTML = `理智耗盡<br><span style="font-size:2rem;">${score.toFixed(2)}</span>`;
+            msgDisplay.innerHTML = `再會<br><span style="font-size:2rem;">${score.toFixed(2)}</span>`;
             msgDisplay.style.opacity = '1';
-            if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
-            setTimeout(resetState, 2500);
+            setTimeout(resetState, 2000);
         }
 
         window.addEventListener('touchstart', startGame, {passive: false});
@@ -251,7 +214,7 @@
                 e.preventDefault();
             }
         }, {passive: false});
-        window.addEventListener('touchend', () => { if(state.isPlaying) gameOver((Date.now()-state.startTime)/1000); });
+        window.addEventListener('touchend', () => state.isPlaying && gameOver((Date.now() - state.startTime)/1000));
     </script>
 </body>
 </html>
