@@ -487,7 +487,7 @@
                 const sig = generateSignature(playerName, newScore);
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
-                list = list.slice(0, 20); 
+                list = list.slice(0, 200); 
 
                 log(`寫入: Rank=${list.length}, Global=${gCount}`);
                 
