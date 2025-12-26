@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v3.5 Sunk Timer)</title>
+    <title>流逝：生存挑戰 (v3.7 Forgiving)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -117,19 +117,19 @@
         }
         @keyframes ripple { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
 
-        /* === 層級 35：UI 計時器 (修正：降到按鈕與錯誤視窗之下) === */
+        /* === 層級 45：UI 計時器 === */
         #timer {
             position: absolute; top: 10%; 
             font-size: 3.5rem; font-weight: 300; 
             color: var(--ink-black); letter-spacing: 2px; opacity: 0.8;
-            z-index: 35; /* 關鍵修改：從 60 降到 35 */
+            z-index: 45;
             pointer-events: none;
             text-align: center; width: 100%;
             text-shadow: 0 0 20px var(--paper-bg); 
         }
         #timer small { font-size: 0.9rem; color: var(--sage-green); display:block; margin-top: 5px; text-transform: uppercase; }
 
-        /* === 層級 60：其他 UI (保持清晰) === */
+        /* === 層級 60：其他 UI === */
         #msg {
             position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
             min-width: 220px; font-size: 18px; color: var(--ink-black); font-weight: 600; 
@@ -363,7 +363,8 @@
             
             updateBtnStyle();
             
-            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 25) gameOver(elapsed);
+            // 關鍵修改：容錯率增加到 + 40
+            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
 
