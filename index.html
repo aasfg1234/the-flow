@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰</title>
+    <title>流逝：最終穩定版</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -15,110 +15,109 @@
             --font-serif: 'Noto Serif TC', serif;
         }
 
-        /* 禁止縮放與回彈效果 */
+        /* 強制鎖定視窗，禁止縮放與滾動 */
         html, body { 
             position: fixed; width: 100%; height: 100%; 
             overflow: hidden; touch-action: none; 
+            margin: 0; padding: 0; background: var(--paper-bg);
         }
 
         body { 
-            margin: 0; background: var(--paper-bg); 
             font-family: var(--font-serif);
             user-select: none; -webkit-user-select: none;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; color: var(--ink-black);
+            color: var(--ink-black);
         }
 
+        /* 背景與雜訊感 */
         #zen-bg {
             position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            z-index: 0; overflow: hidden;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-            transition: transform 0.1s linear; will-change: transform;
-        }
-
-        #leaderboard {
-            position: absolute; bottom: 40px;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(0,0,0,0.05); padding: 25px; 
-            text-align: left; width: 80%; max-width: 300px;
-            pointer-events: auto; border-radius: 2px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
-            z-index: 5; 
-        }
-        #leaderboard h3 { 
-            margin: 0 0 20px 0; color: var(--muted-gold); font-size: 14px; font-weight: 600;
-            border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px;
-            display: flex; justify-content: space-between; letter-spacing: 3px;
-        }
-
-        #btn {
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: 300; text-align: center;
-            position: absolute; 
-            z-index: 50; top: 0; left: 0; 
-            opacity: 0; pointer-events: none;
-            cursor: crosshair; color: #fff;
-            background: var(--sage-green);
-            box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
+            z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
             will-change: transform;
+        }
+
+        /* 核心按鈕 - 修正初始座標 */
+        #btn {
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            position: absolute; z-index: 50; 
+            top: 0; left: 0;
+            width: 260px; height: 260px; /* 初始直徑 */
+            opacity: 0; pointer-events: none; color: #fff;
+            background: var(--sage-green); box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
             writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 5px;
+            font-size: 22px;
+            /* 初始位置在螢幕正中央 */
+            transform: translate3d(calc(50vw - 130px), calc(50vh - 130px), 0);
+            transition: opacity 0.3s;
         }
 
         #timer {
             position: absolute; top: 12%; font-size: 3.5rem; font-weight: 300; 
-            color: var(--ink-black); letter-spacing: 2px; opacity: 0.8;
             z-index: 60; pointer-events: none; text-align: center; width: 100%;
+            letter-spacing: 2px;
         }
+        #timer small { font-size: 1rem; display: block; color: var(--sage-green); letter-spacing: 4px; }
 
         #msg {
-            position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
-            min-width: 220px; font-size: 18px; color: var(--ink-black); font-weight: 600; 
-            opacity: 0; text-align: center; background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px); padding: 20px 30px; border-radius: 50px;
-            z-index: 60; pointer-events: none; transition: opacity 0.3s;
+            position: absolute; top: 28%; left: 50%; transform: translateX(-50%);
+            min-width: 220px; padding: 20px 30px; border-radius: 50px;
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(10px);
+            z-index: 60; opacity: 0; text-align: center; transition: 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
-        #roach-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100; pointer-events: none; overflow: hidden;
+        /* 排行榜 */
+        #leaderboard {
+            position: absolute; bottom: 5%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(5px); padding: 20px; 
+            width: 80%; max-width: 280px; z-index: 5; border-radius: 4px;
         }
+        .score-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; opacity: 0.7; }
 
+        /* 登入 Modal */
         #name-modal {
             position: absolute; inset: 0; background: var(--paper-bg); z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         input { 
-            background: transparent; border: none; border-bottom: 1px solid #ddd;
-            padding: 10px; font-size: 20px; text-align: center; width: 200px; 
-            margin-bottom: 40px; outline: none; font-family: var(--font-serif);
+            background: transparent; border: none; border-bottom: 1px solid #ccc;
+            padding: 10px; font-size: 24px; text-align: center; width: 220px; margin-bottom: 40px;
+            outline: none; font-family: var(--font-serif);
         }
         button { 
-            padding: 12px 40px; font-size: 14px; background: transparent; 
-            border: 1px solid var(--ink-black); border-radius: 50px; cursor: pointer;
+            padding: 12px 50px; border-radius: 50px; border: 1px solid var(--ink-black); 
+            background: none; font-size: 16px; cursor: pointer; letter-spacing: 4px;
         }
-        .roach { position: absolute; z-index: 100; font-size: 40px; pointer-events: none; }
+
+        .roach { position: absolute; z-index: 100; pointer-events: none; font-size: 40px; }
     </style>
 </head>
 <body>
-    <div id="roach-layer"></div>
     <div id="zen-bg"></div>
+    <div id="roach-layer"></div>
+
     <div id="name-modal">
-        <h2 style="letter-spacing: 8px; font-weight: 300;">流逝</h2>
-        <input type="text" id="playerNameInput" placeholder="留名" maxlength="10">
+        <h2 style="letter-spacing: 12px; font-weight: 300; margin-bottom: 40px;">流逝</h2>
+        <input type="text" id="playerNameInput" placeholder="留下印記" maxlength="10">
         <button onclick="saveName()">進入</button>
     </div>
+
     <div id="timer">0.00 <small>SECONDS</small></div>
     <div id="msg"></div>
+    
     <div id="leaderboard">
-        <h3>漂流者名單 <span id="refreshBtn" style="font-size:12px; cursor:pointer;">↻</span></h3>
-        <div id="scoreList"><div class="loading">尋找連結...</div></div>
+        <h4 style="margin:0 0 10px 0; font-weight:300; letter-spacing:3px; border-bottom:1px solid #ddd; padding-bottom:5px;">排行榜</h4>
+        <div id="scoreList" style="font-family: sans-serif;">載入中...</div>
     </div>
+
     <div id="btn">觸碰</div>
 
     <script>
-        // 徹底阻斷 iOS 雙擊放大
+        const PANTRY_ID = "6e8005ef-01b2-48b0-93e8-0e2bb6c80702"; 
+        const BASKET_NAME = "Rank_v2_Final"; // 更換時空，重置紀錄
+
+        // 徹底阻斷雙擊放大
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
@@ -126,39 +125,36 @@
             lastTouchEnd = now;
         }, false);
 
-        const PANTRY_ID = "6e8005ef-01b2-48b0-93e8-0e2bb6c80702"; 
-        const BASKET_NAME = "Rank_v1"; 
-
         const btn = document.getElementById('btn');
         const timerDisplay = document.getElementById('timer');
         const msgDisplay = document.getElementById('msg');
-        const scoreList = document.getElementById('scoreList');
         const nameModal = document.getElementById('name-modal');
-        const inputName = document.getElementById('playerNameInput');
+        const scoreList = document.getElementById('scoreList');
         const roachLayer = document.getElementById('roach-layer');
+        const zenBg = document.getElementById('zen-bg');
 
         let playerName = localStorage.getItem('lastPlayerName') || "";
-        if(playerName) inputName.value = playerName;
+        if(playerName) document.getElementById('playerNameInput').value = playerName;
 
-        const CFG = { startRadius: 130, minRadius: 60, shrinkTime: 90 };
-        let roaches = []; 
         let state = {
             isPlaying: false, startTime: 0,
             btnX: 0, btnY: 0, targetX: 0, targetY: 0,
-            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: CFG.startRadius
+            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: 130,
+            breathAngle: 0
         };
-        let loopId = null, lastFrameTime = 0;
 
         function resetState() {
             const vw = window.innerWidth, vh = window.innerHeight;
             state.btnX = vw / 2; state.btnY = vh / 2;
             state.targetX = state.btnX; state.targetY = state.btnY;
-            state.vx = 0; state.vy = 0;
-            state.currentRadius = CFG.startRadius;
-            roaches.forEach(r => r.destroy()); roaches = []; roachLayer.innerHTML = ''; 
+            state.vx = 0; state.vy = 0; state.currentRadius = 130;
+            state.isPlaying = false;
+            
+            roachLayer.innerHTML = '';
             msgDisplay.style.opacity = '0';
-            btn.style.opacity = 0.9; btn.style.pointerEvents = 'auto';
-            btn.innerText = "觸碰"; btn.style.color = "#fff";
+            btn.style.opacity = 0.9;
+            btn.style.pointerEvents = 'auto';
+            btn.innerText = "觸碰";
             updateBtnStyle();
         }
 
@@ -170,8 +166,9 @@
         }
 
         function saveName() {
-            playerName = inputName.value.trim();
-            if(!playerName) return alert("請留名");
+            let val = document.getElementById('playerNameInput').value.trim();
+            if(!val) return;
+            playerName = val;
             localStorage.setItem('lastPlayerName', playerName);
             nameModal.style.display = 'none';
             resetState();
@@ -180,38 +177,44 @@
 
         function gameLoop(timestamp) {
             if (!state.isPlaying) return;
-            if (!lastFrameTime) lastFrameTime = timestamp;
-            const dt = (timestamp - lastFrameTime) / 1000;
-            lastFrameTime = timestamp;
+            const now = Date.now();
+            const elapsed = (now - state.startTime) / 1000;
+            timerDisplay.childNodes[0].nodeValue = elapsed.toFixed(2) + " ";
 
-            const elapsed = (Date.now() - state.startTime) / 1000;
-            timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
+            // 背景位移
+            state.breathAngle += 0.01;
+            zenBg.style.transform = `scale(${1 + Math.sin(state.breathAngle) * 0.05}) rotate(${Math.sin(state.breathAngle * 0.7) * 2}deg)`;
 
+            // 按鈕物理移動
             if (Math.hypot(state.targetX - state.btnX, state.targetY - state.btnY) < 50 || Math.random() < 0.02) {
-                const margin = state.currentRadius + 30;
+                const margin = state.currentRadius + 40;
                 state.targetX = margin + Math.random() * (window.innerWidth - margin * 2);
                 state.targetY = margin + Math.random() * (window.innerHeight - margin * 2);
             }
+            state.vx += (state.targetX - state.btnX) * 0.001;
+            state.vy += (state.targetY - state.btnY) * 0.001;
+            state.vx *= 0.98; state.vy *= 0.98; // 阻尼
+            state.btnX += state.vx; state.btnY += state.vy;
 
-            const dx = state.targetX - state.btnX, dy = state.targetY - state.btnY, dist = Math.hypot(dx, dy);
-            const targetVX = (dx / dist || 0) * (1.5 + (elapsed / 8)) * 60;
-            const targetVY = (dy / dist || 0) * (1.5 + (elapsed / 8)) * 60;
-            state.vx += (targetVX - state.vx) * 2.0 * dt;
-            state.vy += (targetVY - state.vy) * 2.0 * dt;
-            state.btnX += state.vx * dt;
-            state.btnY += state.vy * dt;
-
-            state.currentRadius = (elapsed < CFG.shrinkTime) ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
+            // 漸縮
+            if (state.currentRadius > 60) state.currentRadius -= 0.03;
             updateBtnStyle();
 
-            if (elapsed > 10 && Math.random() < 0.015 && roaches.length < 35) roaches.push(new Roach());
-            roaches = roaches.filter(r => r.update(dt) ? true : (r.destroy(), false));
+            // 蟑螂生成 (10秒後)
+            if (elapsed > 10 && Math.random() < 0.015 && roachLayer.childElementCount < 30) {
+                const r = document.createElement('div');
+                r.className = 'roach'; r.innerText = '🪳';
+                r.style.left = Math.random() * 90 + '%'; r.style.top = Math.random() * 90 + '%';
+                roachLayer.appendChild(r);
+                setTimeout(() => r.remove(), 3000);
+            }
 
+            // 脫離判定
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 15) {
                 gameOver(elapsed);
                 return;
             }
-            loopId = requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoop);
         }
 
         function startGame(e) {
@@ -219,66 +222,50 @@
             const p = e.touches ? e.touches[0] : e;
             state.fingerX = p.clientX; state.fingerY = p.clientY;
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius) return;
-            state.isPlaying = true; state.startTime = Date.now(); lastFrameTime = 0;
-            btn.innerText = ""; btn.style.color = "transparent";
-            loopId = requestAnimationFrame(gameLoop);
+            state.isPlaying = true; state.startTime = Date.now();
+            btn.innerText = "";
+            requestAnimationFrame(gameLoop);
         }
 
         function gameOver(score) {
-            state.isPlaying = false; cancelAnimationFrame(loopId);
-            if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+            state.isPlaying = false;
             msgDisplay.innerHTML = `再會<br><span style="font-size:2rem;">${score.toFixed(2)}</span>`;
             msgDisplay.style.opacity = '1';
             submitScore(score);
-            setTimeout(resetState, 2000);
+            setTimeout(resetState, 2500);
         }
 
-        class Roach {
-            constructor() {
-                this.el = document.createElement('div'); this.el.innerText = '🪳'; this.el.className = 'roach';
-                this.el.style.fontSize = `${30 + Math.random() * 40}px`; roachLayer.appendChild(this.el);
-                const side = Math.floor(Math.random() * 4), off = 100, w = window.innerWidth, h = window.innerHeight;
-                if(side===0){this.x=Math.random()*w;this.y=-off}else if(side===1){this.x=w+off;this.y=Math.random()*h}else if(side===2){this.x=Math.random()*w;this.y=h+off}else{this.x=-off;this.y=Math.random()*h}
-                this.speed = 700 + Math.random() * 300; this.angle = Math.atan2(state.btnY - this.y, state.btnX - this.x);
-            }
-            update(dt) {
-                this.x += Math.cos(this.angle) * this.speed * dt;
-                this.y += Math.sin(this.angle) * this.speed * dt;
-                this.el.style.transform = `translate3d(${this.x}px, ${this.y}px, 0) rotate(${this.angle * 180 / Math.PI + 90}deg)`;
-                return !(this.x < -200 || this.x > window.innerWidth + 200 || this.y < -200 || this.y > window.innerHeight + 200);
-            }
-            destroy() { if(this.el.parentNode) this.el.parentNode.removeChild(this.el); }
-        }
-
-        window.addEventListener('touchstart', startGame, {passive: false});
-        window.addEventListener('mousedown', startGame);
-        window.addEventListener('touchmove', (e) => {
-            if (state.isPlaying) { state.fingerX = e.touches[0].clientX; state.fingerY = e.touches[0].clientY; e.preventDefault(); }
-        }, {passive: false});
-        window.addEventListener('mousemove', (e) => { if (state.isPlaying) { state.fingerX = e.clientX; state.fingerY = e.clientY; }});
-        window.addEventListener('touchend', () => state.isPlaying && gameOver((Date.now() - state.startTime) / 1000));
-        window.addEventListener('mouseup', () => state.isPlaying && gameOver((Date.now() - state.startTime) / 1000));
-
+        // --- 排行榜 API ---
         function loadScores() {
             fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`).then(res => res.json())
             .then(data => {
                 const list = data.scores || [];
-                scoreList.innerHTML = list.slice(0, 5).map((e, i) => `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>No.${i+1} ${e.name}</span><span>${parseFloat(e.score).toFixed(2)}</span></div>`).join('');
-            }).catch(() => { scoreList.innerHTML = "訊號微弱"; });
+                scoreList.innerHTML = list.slice(0, 5).map((e, i) => `<div class="score-row"><span>No.${i+1} ${e.name}</span><span>${parseFloat(e.score).toFixed(2)}</span></div>`).join('');
+            }).catch(() => scoreList.innerHTML = "暫無數據");
         }
+
         function submitScore(newScore) {
-            fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`).then(res => res.json())
+            fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`).then(res => res.json().catch(()=>({scores:[]})))
             .then(data => {
                 let list = data.scores || [];
                 list.push({ name: playerName, score: newScore });
                 list.sort((a, b) => b.score - a.score);
                 fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ scores: list.slice(0, 20) })
-                });
+                    body: JSON.stringify({ scores: list.slice(0, 10) })
+                }).then(() => loadScores());
             });
         }
-        document.getElementById('refreshBtn').onclick = loadScores;
+
+        window.addEventListener('touchstart', startGame, {passive: false});
+        window.addEventListener('touchmove', (e) => {
+            if (state.isPlaying) {
+                state.fingerX = e.touches[0].clientX;
+                state.fingerY = e.touches[0].clientY;
+                e.preventDefault();
+            }
+        }, {passive: false});
+        window.addEventListener('touchend', () => { if(state.isPlaying) gameOver((Date.now()-state.startTime)/1000); });
     </script>
 </body>
 </html>
