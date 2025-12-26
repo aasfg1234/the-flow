@@ -3,79 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：最終穩定版</title>
+    <title>流逝：生存挑戰</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --paper-bg: #f7f5f0;
             --ink-black: #2c2c2c;
-            --muted-gold: #c7b299;
             --sage-green: #8da399;
             --font-serif: 'Noto Serif TC', serif;
         }
-
-        /* 強制鎖定視窗，禁止縮放與滾動 */
+        /* 徹底鎖定，防止滾動與縮放 */
         html, body { 
             position: fixed; width: 100%; height: 100%; 
             overflow: hidden; touch-action: none; 
             margin: 0; padding: 0; background: var(--paper-bg);
         }
-
         body { 
             font-family: var(--font-serif);
             user-select: none; -webkit-user-select: none;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: var(--ink-black);
         }
-
-        /* 背景與雜訊感 */
         #zen-bg {
-            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            position: absolute; inset: -50%; width: 200%; height: 200%;
             z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
             will-change: transform;
         }
-
-        /* 核心按鈕 - 修正初始座標 */
+        /* 排行榜底層 */
+        #leaderboard {
+            position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(5px);
+            padding: 15px; width: 85%; max-width: 280px; z-index: 5; border-radius: 4px;
+        }
+        .score-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; opacity: 0.7; font-family: sans-serif;}
+        /* 核心按鈕 */
         #btn {
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            position: absolute; z-index: 50; 
-            top: 0; left: 0;
-            width: 260px; height: 260px; /* 初始直徑 */
+            position: absolute; z-index: 50; top: 0; left: 0;
+            width: 240px; height: 240px; /* 直徑固定 */
             opacity: 0; pointer-events: none; color: #fff;
             background: var(--sage-green); box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
             writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 5px;
             font-size: 22px;
-            /* 初始位置在螢幕正中央 */
-            transform: translate3d(calc(50vw - 130px), calc(50vh - 130px), 0);
-            transition: opacity 0.3s;
+            transform: translate3d(calc(50vw - 120px), calc(50vh - 120px), 0);
         }
-
         #timer {
             position: absolute; top: 12%; font-size: 3.5rem; font-weight: 300; 
             z-index: 60; pointer-events: none; text-align: center; width: 100%;
-            letter-spacing: 2px;
         }
-        #timer small { font-size: 1rem; display: block; color: var(--sage-green); letter-spacing: 4px; }
-
         #msg {
             position: absolute; top: 28%; left: 50%; transform: translateX(-50%);
-            min-width: 220px; padding: 20px 30px; border-radius: 50px;
+            min-width: 180px; padding: 15px 25px; border-radius: 50px;
             background: rgba(255,255,255,0.85); backdrop-filter: blur(10px);
             z-index: 60; opacity: 0; text-align: center; transition: 0.3s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
-
-        /* 排行榜 */
-        #leaderboard {
-            position: absolute; bottom: 5%;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(5px); padding: 20px; 
-            width: 80%; max-width: 280px; z-index: 5; border-radius: 4px;
-        }
-        .score-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; opacity: 0.7; }
-
-        /* 登入 Modal */
         #name-modal {
             position: absolute; inset: 0; background: var(--paper-bg); z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -89,35 +70,29 @@
             padding: 12px 50px; border-radius: 50px; border: 1px solid var(--ink-black); 
             background: none; font-size: 16px; cursor: pointer; letter-spacing: 4px;
         }
-
         .roach { position: absolute; z-index: 100; pointer-events: none; font-size: 40px; }
     </style>
 </head>
 <body>
     <div id="zen-bg"></div>
     <div id="roach-layer"></div>
-
     <div id="name-modal">
         <h2 style="letter-spacing: 12px; font-weight: 300; margin-bottom: 40px;">流逝</h2>
         <input type="text" id="playerNameInput" placeholder="留下印記" maxlength="10">
         <button onclick="saveName()">進入</button>
     </div>
-
-    <div id="timer">0.00 <small>SECONDS</small></div>
+    <div id="timer">0.00</div>
     <div id="msg"></div>
-    
     <div id="leaderboard">
-        <h4 style="margin:0 0 10px 0; font-weight:300; letter-spacing:3px; border-bottom:1px solid #ddd; padding-bottom:5px;">排行榜</h4>
-        <div id="scoreList" style="font-family: sans-serif;">載入中...</div>
+        <div id="scoreList">載入排行榜中...</div>
     </div>
-
     <div id="btn">觸碰</div>
 
     <script>
         const PANTRY_ID = "6e8005ef-01b2-48b0-93e8-0e2bb6c80702"; 
-        const BASKET_NAME = "Rank_v2_Final"; // 更換時空，重置紀錄
+        const BASKET_NAME = "Rank_v3_Final"; // 更換時空以重置紀錄
 
-        // 徹底阻斷雙擊放大
+        // 防止 iOS 雙擊放大
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
@@ -139,7 +114,7 @@
         let state = {
             isPlaying: false, startTime: 0,
             btnX: 0, btnY: 0, targetX: 0, targetY: 0,
-            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: 130,
+            vx: 0, vy: 0, fingerX: 0, fingerY: 0, currentRadius: 120,
             breathAngle: 0
         };
 
@@ -147,9 +122,8 @@
             const vw = window.innerWidth, vh = window.innerHeight;
             state.btnX = vw / 2; state.btnY = vh / 2;
             state.targetX = state.btnX; state.targetY = state.btnY;
-            state.vx = 0; state.vy = 0; state.currentRadius = 130;
+            state.vx = 0; state.vy = 0; state.currentRadius = 120;
             state.isPlaying = false;
-            
             roachLayer.innerHTML = '';
             msgDisplay.style.opacity = '0';
             btn.style.opacity = 0.9;
@@ -175,33 +149,28 @@
             loadScores();
         }
 
-        function gameLoop(timestamp) {
+        function gameLoop() {
             if (!state.isPlaying) return;
             const now = Date.now();
             const elapsed = (now - state.startTime) / 1000;
-            timerDisplay.childNodes[0].nodeValue = elapsed.toFixed(2) + " ";
+            timerDisplay.innerText = elapsed.toFixed(2);
 
-            // 背景位移
             state.breathAngle += 0.01;
             zenBg.style.transform = `scale(${1 + Math.sin(state.breathAngle) * 0.05}) rotate(${Math.sin(state.breathAngle * 0.7) * 2}deg)`;
 
-            // 按鈕物理移動
             if (Math.hypot(state.targetX - state.btnX, state.targetY - state.btnY) < 50 || Math.random() < 0.02) {
-                const margin = state.currentRadius + 40;
-                state.targetX = margin + Math.random() * (window.innerWidth - margin * 2);
-                state.targetY = margin + Math.random() * (window.innerHeight - margin * 2);
+                state.targetX = 80 + Math.random() * (window.innerWidth - 160);
+                state.targetY = 150 + Math.random() * (window.innerHeight - 300);
             }
-            state.vx += (state.targetX - state.btnX) * 0.001;
-            state.vy += (state.targetY - state.btnY) * 0.001;
-            state.vx *= 0.98; state.vy *= 0.98; // 阻尼
+            state.vx += (state.targetX - state.btnX) * 0.0008;
+            state.vy += (state.targetY - state.btnY) * 0.0008;
+            state.vx *= 0.97; state.vy *= 0.97; 
             state.btnX += state.vx; state.btnY += state.vy;
 
-            // 漸縮
-            if (state.currentRadius > 60) state.currentRadius -= 0.03;
+            if (state.currentRadius > 55) state.currentRadius -= 0.02;
             updateBtnStyle();
 
-            // 蟑螂生成 (10秒後)
-            if (elapsed > 10 && Math.random() < 0.015 && roachLayer.childElementCount < 30) {
+            if (elapsed > 10 && Math.random() < 0.015 && roachLayer.childElementCount < 25) {
                 const r = document.createElement('div');
                 r.className = 'roach'; r.innerText = '🪳';
                 r.style.left = Math.random() * 90 + '%'; r.style.top = Math.random() * 90 + '%';
@@ -209,7 +178,6 @@
                 setTimeout(() => r.remove(), 3000);
             }
 
-            // 脫離判定
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 15) {
                 gameOver(elapsed);
                 return;
@@ -235,13 +203,12 @@
             setTimeout(resetState, 2500);
         }
 
-        // --- 排行榜 API ---
         function loadScores() {
             fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`).then(res => res.json())
             .then(data => {
                 const list = data.scores || [];
                 scoreList.innerHTML = list.slice(0, 5).map((e, i) => `<div class="score-row"><span>No.${i+1} ${e.name}</span><span>${parseFloat(e.score).toFixed(2)}</span></div>`).join('');
-            }).catch(() => scoreList.innerHTML = "暫無數據");
+            }).catch(() => scoreList.innerHTML = "尚未有人留下紀錄");
         }
 
         function submitScore(newScore) {
