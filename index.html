@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.0 Time Tracking)</title>
+    <title>流逝：生存挑戰 (v4.1 Time Flow)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -146,7 +146,6 @@
             letter-spacing: 1px; font-family: sans-serif; z-index: 60;
             text-align: right;
         }
-        /* 更新樣式以容納總時數 */
         .global-count { color: var(--muted-gold); margin-left: 5px; }
         .global-time { color: var(--sage-green); margin-left: 5px; font-weight: bold; }
 
@@ -251,6 +250,8 @@
         
         const SECRET_SALT = "TheFlow_Survival_2025_HellMode_Secured";
         const CFG = { startRadius: 130, minRadius: 60, shrinkTime: 90, maxRoaches: 100 };
+        // 新增：時間偏移量 (58分3秒 = 3483秒)
+        const INITIAL_TIME_OFFSET = 3483;
 
         const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg'), roachLayer = document.getElementById('roach-layer'), bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
         const scoreList = document.getElementById('scoreList'), nameModal = document.getElementById('name-modal'), inputName = document.getElementById('playerNameInput'), idDisplay = document.getElementById('player-id-display');
@@ -260,7 +261,6 @@
         let isMuted = true; bgm.volume = 0.6; bgm.muted = true;
         let playerName = localStorage.getItem('lastPlayerName') || "";
         let globalPlayCount = 0; 
-        // 新增：全域累計時間 (秒)
         let globalPlayTime = 0;
         let isSubmitting = false;
 
@@ -306,9 +306,17 @@
             loadScores(); 
         }, 500);
 
+        // 新增：時間格式化函式
+        function formatGlobalTime(seconds) {
+            const total = seconds + INITIAL_TIME_OFFSET;
+            const m = Math.floor(total / 60);
+            const s = (total % 60).toFixed(2);
+            return `${m}分${s}秒`;
+        }
+
         function updateIDDisplay() {
-            // 更新 UI：顯示次數與總時數
-            idDisplay.innerHTML = `${playerName} <span class="global-count">· 世界: ${globalPlayCount}</span> <span class="global-time">· 累計: ${parseFloat(globalPlayTime).toFixed(1)}s</span>`;
+            // 更新 UI：使用格式化時間
+            idDisplay.innerHTML = `${playerName} <span class="global-count">· 世界: ${globalPlayCount}</span> <span class="global-time">· 流逝: ${formatGlobalTime(globalPlayTime)}</span>`;
         }
 
         function saveName() {
@@ -320,7 +328,6 @@
             safeFetch().then(data => {
                 if (data.global_play_count && data.global_play_count > globalPlayCount) {
                     globalPlayCount = data.global_play_count;
-                    // 同步時間
                     globalPlayTime = data.global_play_time || 0;
                     updateIDDisplay();
                 }
@@ -492,7 +499,6 @@
             safeFetch().then(data => {
                 let list = data.scores || [];
                 let gCount = (data.global_play_count || 0) + 1;
-                // 計算總時間
                 let gTime = (data.global_play_time || 0) + newScore;
                 
                 const sig = generateSignature(playerName, newScore);
@@ -508,7 +514,6 @@
                 return fetch(postUrl, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    // 新增 global_play_time 欄位
                     body: JSON.stringify({ scores: list, global_play_count: gCount, global_play_time: gTime }) 
                 });
             })
