@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.6 God Mode Fix)</title>
+    <title>流逝：生存挑戰 (v5.7 Emoji Return)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -114,7 +114,6 @@
             opacity: 0.9;
         }
         #btn:active {
-            /* 按下回饋 */
             transform: translate3d(-50%, -50%, 0) scale(0.95); 
         }
         #btn span { display: block; }
@@ -125,12 +124,13 @@
             z-index: 170; pointer-events: none !important; overflow: hidden; 
         }
         
-        /* === 蟑螂通用樣式 === */
+        /* === 蟑螂通用樣式 (改回 Emoji) === */
         .roach { 
             position: absolute; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233e2723'%3E%3Cpath d='M12 2c-3 0-5 2-5 5v2c-2 0-3 1.5-3 3 0 1.5.5 3 1.5 4C4.5 17.5 3 20 3 20s2.5 0 5-2c1 1 2.5 1 4 1s3 0 4-1c2.5 2 5 2 5 2s-1.5-2.5-2.5-4c1-1 1.5-2.5 1.5-4 0-1.5-1-3-3-3V7c0-3-2-5-5-5z'/%3E%3Cpath fill='none' stroke='%233e2723' stroke-width='1' d='M7 9C5 8 2 9 2 9M17 9c2-1 5 0 5 0M7 13c-2-.5-4 0-4 0M17 13c2-.5 4 0 4 0'/%3E%3C/svg%3E");
-            width: 64px; height: 64px;
-            background-size: contain; background-repeat: no-repeat; background-position: center;
+            /* 移除 SVG 背景，改用文字 */
+            font-size: 40px; /* 預設大小，會被 JS 覆蓋 */
+            text-align: center;
+            line-height: 1;
             transform: translateZ(0); will-change: transform, top, left; 
             contain: layout style; transition: transform 0.1s linear; 
             pointer-events: none !important; 
@@ -156,28 +156,17 @@
             z-index: 60; pointer-events: none; transition: opacity 0.3s;
         }
 
-        /* === 玩家 ID (外掛觸發點 - 修復版) === */
+        /* === 玩家 ID (外掛觸發點) === */
         #player-id-display { 
             position: absolute; top: 30px; right: 30px; 
             font-size: 11px; color: #aaa; 
-            
-            /* 核心修改：加大觸控區，圖層置頂 */
-            padding: 20px; 
-            margin: -20px; /* 抵消 padding 避免位移 */
-            z-index: 400; 
-            
+            padding: 20px; margin: -20px; z-index: 400; 
             pointer-events: auto; cursor: pointer; user-select: none;
             letter-spacing: 1px; font-family: sans-serif;
-            text-align: right;
-            border-radius: 10px;
+            text-align: right; border-radius: 10px;
             transition: background 0.1s, color 0.1s;
         }
-        /* 點擊回饋 */
-        #player-id-display:active {
-            background: rgba(0,0,0,0.05);
-            color: var(--ink-black);
-        }
-
+        #player-id-display:active { background: rgba(0,0,0,0.05); color: var(--ink-black); }
         .global-count { color: var(--muted-gold); margin-left: 5px; }
         .global-time { color: var(--sage-green); margin-left: 5px; font-weight: bold; }
 
@@ -507,9 +496,9 @@
 
         function spawnRoach() { 
             const r = document.createElement('div'); r.className = 'roach'; 
-            const size = 64 + Math.random() * 64;
-            r.style.width = size + 'px';
-            r.style.height = size + 'px';
+            r.innerText = '🪳'; // 加入 Emoji
+            // 使用 font-size 控制大小
+            r.style.fontSize = `${30 + Math.random() * 50}px`;
             
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 150; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
@@ -520,8 +509,9 @@
 
         function spawnGiantRoach() {
             const r = document.createElement('div'); r.className = 'roach'; 
-            r.style.width = '350px';
-            r.style.height = '350px';
+            r.innerText = '🪳'; // 加入 Emoji
+            // 使用超大 font-size
+            r.style.fontSize = '350px';
             r.style.opacity = '0.9';
             
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 400; 
