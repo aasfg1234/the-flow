@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.1 Time Flow)</title>
+    <title>流逝：生存挑戰 (v4.2.1 Safe Flow)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -225,7 +225,12 @@
             <span>遊戲方式</span>
             長按圓圈勿放<br>
             靜聽音樂流淌<br>
-            無視眼前恐懼
+            無視眼前恐懼<br>
+              <br>
+            遊戲規則<br>
+            手指按著圓<br>
+            跟著圓<br>
+            請隨緣
         </div>
         <input type="text" id="playerNameInput" placeholder="你的名字" maxlength="10" autocomplete="off">
         <button onclick="saveName()">進入</button>
@@ -250,7 +255,6 @@
         
         const SECRET_SALT = "TheFlow_Survival_2025_HellMode_Secured";
         const CFG = { startRadius: 130, minRadius: 60, shrinkTime: 90, maxRoaches: 100 };
-        // 新增：時間偏移量 (58分3秒 = 3483秒)
         const INITIAL_TIME_OFFSET = 1;
 
         const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg'), roachLayer = document.getElementById('roach-layer'), bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
@@ -306,7 +310,6 @@
             loadScores(); 
         }, 500);
 
-        // 新增：時間格式化函式
         function formatGlobalTime(seconds) {
             const total = seconds + INITIAL_TIME_OFFSET;
             const m = Math.floor(total / 60);
@@ -315,7 +318,6 @@
         }
 
         function updateIDDisplay() {
-            // 更新 UI：使用格式化時間
             idDisplay.innerHTML = `${playerName} <span class="global-count">· 世界: ${globalPlayCount}</span> <span class="global-time">· 流逝: ${formatGlobalTime(globalPlayTime)}</span>`;
         }
 
@@ -458,6 +460,7 @@
         }
         function moveFinger(e) { if (state.isPlaying) { const p = e.touches ? e.touches[0] : e; state.fingerX = p.clientX; state.fingerY = p.clientY; e.preventDefault(); } }
 
+        // === 關鍵修改：safeFetch 會回傳 success 狀態 ===
         function safeFetch() {
             const bustedUrl = PROXY_BASE + encodeURIComponent(TARGET_URL + `?_t=${Date.now()}`);
             return fetch(bustedUrl).then(res => {
@@ -467,14 +470,17 @@
             })
             .then(data => {
                 setStatus('#0f0'); 
-                if (Array.isArray(data)) return { scores: [], global_play_count: 0 };
-                return data || { scores: [], global_play_count: 0 };
+                // 標記讀取成功
+                data.success = true;
+                if (Array.isArray(data)) return { scores: [], global_play_count: 0, global_play_time: 0, success: true };
+                return data || { scores: [], global_play_count: 0, global_play_time: 0, success: true };
             })
             .catch(e => {
                 log("讀取: " + e.message);
                 if(e.message.includes("429")) setStatus('#ff0'); 
                 else setStatus('#f00');
-                return { scores: [], global_play_count: globalPlayCount };
+                // 標記讀取失敗
+                return { scores: [], global_play_count: globalPlayCount, global_play_time: globalPlayTime, success: false };
             });
         }
 
@@ -483,10 +489,11 @@
             safeFetch().then(data => {
                 let cleanScores = (data.scores || []).filter(e => e.signature && e.signature === generateSignature(e.name, e.score));
                 renderLeaderboard(cleanScores); 
-                globalPlayCount = data.global_play_count || 0;
-                // 讀取時間
-                globalPlayTime = data.global_play_time || 0;
-                updateIDDisplay();
+                if (data.success) { // 只在成功時更新全域變數，避免被 false 蓋掉
+                    globalPlayCount = data.global_play_count || 0;
+                    globalPlayTime = data.global_play_time || 0;
+                    updateIDDisplay();
+                }
                 rb.style.animation = "none"; 
             });
         }
@@ -497,6 +504,11 @@
             log("準備上傳...");
             
             safeFetch().then(data => {
+                // === 安全鎖：如果讀取失敗，禁止寫入 ===
+                if (!data.success) {
+                    throw new Error("讀取失敗，為保護資料拒絕存檔");
+                }
+
                 let list = data.scores || [];
                 let gCount = (data.global_play_count || 0) + 1;
                 let gTime = (data.global_play_time || 0) + newScore;
@@ -506,6 +518,7 @@
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
                 
+                // 保留 100 筆
                 list = list.slice(0, 100); 
 
                 log(`寫入: Rank=${list.length}, Global=${gCount}, Time=${gTime}`);
@@ -526,8 +539,9 @@
                 isSubmitting = false;
             })
             .catch(e => {
-                log("上傳失敗: " + e.message);
-                msgDisplay.innerHTML = msgDisplay.innerHTML.replace("(紀錄中...)", "<span style='color:var(--dusty-pink); font-size:12px'>(遺失)</span>");
+                log("中止: " + e.message);
+                // 顯示紅色錯誤訊息給玩家
+                msgDisplay.innerHTML = msgDisplay.innerHTML.replace("(紀錄中...)", "<span style='color:#ef5350; font-size:12px'>(網路不穩，未存檔)</span>");
                 isSubmitting = false;
             });
         }
