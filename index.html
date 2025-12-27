@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.7 Parallax Fix)</title>
+    <title>流逝：生存挑戰 (v4.5 Anti-Cheat)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -99,8 +99,8 @@
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
             box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
-            transition: background-color 0.5s; 
-            display: none; will-change: transform, width, height, opacity;
+            transition: width 0.1s, height 0.1s, background-color 0.5s; 
+            display: none; will-change: transform, opacity;
             
             font-family: var(--font-serif); 
             font-weight: 300; 
@@ -303,9 +303,10 @@
         let lastTouchEnd = 0;
         document.addEventListener('touchend', e => { if (Date.now() - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = Date.now(); }, false);
 
-        // 防作弊：切換視窗視為死亡
+        // === 新增：防切視窗偵測 ===
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && state.isPlaying) {
+                // 如果在遊戲中切換視窗，直接 Game Over
                 gameOver((Date.now() - state.startTime) / 1000);
             }
         });
@@ -367,19 +368,26 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
-            // === 核心修改：隨機擾動透明度 (Random Flux) ===
-            const chaos = Math.min(1, elapsed / 120); 
-            state.btnOpacity += (Math.random() - 0.5) * 0.15; 
-            const maxOp = 1.0 - (chaos * 0.6); 
-            const minOp = 0.8 - (chaos * 0.75); 
-            if (state.btnOpacity > maxOp) state.btnOpacity = maxOp;
-            if (state.btnOpacity < minOp) state.btnOpacity = minOp;
+            if (elapsed > 10 && state.fadeMode === 0) { 
+                if (Math.random() < (0.005 + (elapsed-10)*0.0001)) { 
+                    state.fadeMode = 1; 
+                    state.fadeFloor = 0.25 + Math.random() * 0.25; 
+                } 
+            }
+            if (state.fadeMode === 1) { 
+                state.btnOpacity -= 0.005; 
+                if (state.btnOpacity <= state.fadeFloor) { state.btnOpacity = state.fadeFloor; state.fadeMode = 2; } 
+            }
+            else if (state.fadeMode === 2) { 
+                state.btnOpacity += 0.005; 
+                if (state.btnOpacity >= 0.9) { state.btnOpacity = 0.9; state.fadeMode = 0; } 
+            }
+            else { state.btnOpacity = 0.9; }
             btn.style.opacity = state.btnOpacity;
             
             updateBtnStyle();
             
-            // === 關鍵修正：Y軸偏移 20px ===
-            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
+            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
 
@@ -477,6 +485,7 @@
                 log("讀取: " + e.message);
                 if(e.message.includes("429")) setStatus('#ff0'); 
                 else setStatus('#f00');
+                // 標記讀取失敗，防止寫入
                 return { scores: [], global_play_count: globalPlayCount, global_play_time: globalPlayTime, success: false };
             });
         }
@@ -501,6 +510,7 @@
             log("準備上傳...");
             
             safeFetch().then(data => {
+                // 安全鎖：如果讀取失敗，禁止寫入
                 if (!data.success) {
                     throw new Error("讀取失敗，為保護資料拒絕存檔");
                 }
@@ -510,9 +520,11 @@
                 let gTime = (data.global_play_time || 0) + newScore;
                 
                 const sig = generateSignature(playerName, newScore);
+                
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
                 
+                // 保留 100 筆
                 list = list.slice(0, 100); 
 
                 log(`寫入: Rank=${list.length}, Global=${gCount}, Time=${gTime}`);
