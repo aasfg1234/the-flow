@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.3 Realistic Titan)</title>
+    <title>流逝：生存挑戰 (v5.4 SVG Titan)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -115,20 +115,17 @@
         /* === 層級 170：一般蟑螂層 (在按鈕之上) === */
         #normal-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 170; pointer-events: none; overflow: hidden; }
         
-        /* === 蟑螂通用樣式 (更新為擬真圖片) === */
+        /* === 蟑螂通用樣式 (使用 SVG Data URI) === */
         .roach { 
             position: absolute; 
-            /* 替換為擬真蟑螂圖片 Base64 */
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABHPGVmAAAAdVBMVEUAAAD////7+/v39/fw8PDt7e3n5+fj4+Pg4ODV1dXJycnDw8O+vr63t7exsbGqqqqnp6eioqKfn5+bm5uXl5eSkpKRkZGJiYmEhISBgYF7e3t4eHh0dHRxcXFsbGxoaGhlZWVhYWFeXl5XV1dSUlJOTk441ktDAAAAJXRSTlMA+/30BPkI+vf7/PT9/f3+/f30+v3+/P39/f7+/v3+/v39/f3+jE8s1gAAAytJREFUaNytmollwjAMhS2QhC2QQEhgC7RAQthL9j8D575xYidx2j99361WjmTJ8q34E8cW/uA4iX+a63j9x1zW8S1gK+c/Afa2P5x4t3/c+P0bF5G/gY9x/c7N6D4G3i9xGfnNfD50+jE/lX0S78v3X05xWd9vI0W0D7209hF78P3sI66N78eeL+x92C/tPcTPgXvYV+y576f2P2Yn9tF75t5H1P13Lz133x9/7g/2Ufvvb5T+/sM+av/1jcrfP8y+Yj+9Z+3fP+y77w/tWfsXqL9H2gfvWXtE7KP1d2uvgN/L96v23H0F/Nn33b3v2Jc7vXbvH3v/fSg/g78v39faW9D99z7Q3uL7zZ7B9/7tE8Ff3f+N/Rj39469A/44+z9oXwH/P/a8fX2f2L++X/Qe8CfvF+0dY5/e9/a+sY/3+4v9N/Z9P9/eM/Y376F9Zexje0F7x97724W9Zezz+8Peh/3R93t/yv+B+9B/8t437h/7H9r/7X3f+A+499D9N/bX/fL/Q+O/b9/f+/+h+9/Y/8a+Z+7/0f1j/7f3P/R+1X4M2X8P5XvQ/nvf3+O97w/t39B4X74P7Rv23rO3gK1Zew/aK8ber9H9qL2H9r3/7t/b+0Z7C/mJ73/tLXtvv/u7tfekvWfvA/tBex/Zf2ivGfvA/p29J+0dY9+395Z9tP499mPG/sf2mr2P7N/bK8Z+YO9x+2f2BfuGfdeesrfQ/tBeM/be/4h9xf7H9t+1/6F9195D9gX73rX/qL3l7P/g/tv2mrFf3U+Y/cDeB/a3Yv+/9z6xv3UfN/b/S98X7H3sP1079h/aX4n92P3Y95E9Yt877n9irxj7B3vvf9e++N5j9pq5j+4H7T17H3l/X/aKsX9zP2X2ir2H7N/ZK8bet98/s/eQ/f/Y/zV7xNg/2J+2H7Of2P+3X1079n1rXwD7D9r/Hvs/sFeMfXQ/vXbv//v7qX0B/L9o/1H7P27/WXtP2dfu34v9L7Vn7I/b/1F7D9mH9mP2w7H/m71m7Ev3T7T3kL13v1g79uP2q2uf3H+39oy9d/957N/t/9W+APaj/bJ9ce+/9v31/1X7D9rv/r/aO/b+S/vP/f+0L9gP7Yf2Fvsf2w/Y34v9N+0Z++f2/2z/SfvE/vP/lfaGvffvN+0dY//XftHesPf+/Vl7z/6H9rP9/wAFm/Yq/e7v+gAAAABJRU5ErkJggg==');
-            /* 設定適當的大小 */
+            /* 這裡使用 SVG 向量圖，保證不模糊，且一定能顯示 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500'%3E%3Cpath fill='%233e2723' d='M250 80c-20-40-50-60-50-60s-10-20-5-30 20-10 30 0c0 0 10 10 25 10s25-10 25-10 25-10 30 0 5 20-5 30-30 20-50 60z'/%3E%3Cpath fill='%233e2723' d='M250 80c-40 0-70 40-80 100-10 60 10 200 80 280 70-80 90-220 80-280-10-60-40-100-80-100z'/%3E%3Cpath stroke='%233e2723' stroke-width='8' fill='none' d='M180 120c-40-20-80 0-100 20M320 120c40-20 80 0 100 20M170 180c-50-10-100 20-120 50M330 180c50-10 100 20 120 50M180 250c-50 10-90 60-100 100M320 250c50 10 90 60 100 100'/%3E%3Cpath stroke='%235d4037' stroke-width='2' fill='none' d='M250 80v380' opacity='0.3'/%3E%3C/svg%3E");
             width: 64px; height: 64px;
-            /* 確保圖片正確顯示 */
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            /* 強制 GPU 加速 */
             transform: translateZ(0); will-change: transform, top, left; 
-            /* 這裡的 transition 會被 JS 動態覆蓋 */
+            contain: layout style; transition: transform 0.1s linear; 
         }
 
         /* === 層級 45：UI 計時器 === */
@@ -389,20 +386,22 @@
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
             state.currentRadius = elapsed < CFG.shrinkTime ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
             
-            // 一般蟑螂 (加入到 normalLayer)
+            // Random Roach
             if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && normalLayer.childElementCount < CFG.maxRoaches) spawnRoach();
             
+            // System Error
             if (elapsed > state.nextErrorTime) {
                 spawnError();
                 state.nextErrorTime += 15;
             }
 
+            // Fake Battery
             if (elapsed > state.nextBatteryTime) {
                 batteryOverlay.style.display = 'flex';
                 state.nextBatteryTime += 22.5; 
                 setTimeout(() => { batteryOverlay.style.display = 'none'; }, 3000);
             }
-            // 巨型蟑螂
+            // Giant Roach
             if (elapsed > state.nextGiantRoachTime) {
                 spawnGiantRoach();
                 state.nextGiantRoachTime += 28;
@@ -417,11 +416,13 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
+            // Stable Opacity
             state.btnOpacity = 0.9;
             btn.style.opacity = state.btnOpacity;
             
             updateBtnStyle();
             
+            // Y-offset 20px for Parallax
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
@@ -438,10 +439,8 @@
             setTimeout(() => { if(err.parentNode) err.remove(); }, 3000);
         }
 
-        // 一般蟑螂 (移除 innerText，依靠 CSS 背景圖)
         function spawnRoach() { 
             const r = document.createElement('div'); r.className = 'roach'; 
-            // 隨機大小 (64px ~ 128px)
             const size = 64 + Math.random() * 64;
             r.style.width = size + 'px';
             r.style.height = size + 'px';
@@ -453,10 +452,8 @@
             roachBrain(r, x, y); 
         }
 
-        // 巨型蟑螂 (設定超大尺寸)
         function spawnGiantRoach() {
             const r = document.createElement('div'); r.className = 'roach'; 
-            // 固定超大尺寸
             r.style.width = '350px';
             r.style.height = '350px';
             r.style.opacity = '0.9';
@@ -469,64 +466,48 @@
             
             const lifeSpan = 5000; 
             const endTime = Date.now() + lifeSpan;
-            
-            // 開始擬真爆衝
             scuttleGiant(r, x, y, endTime);
-
             setTimeout(() => { if(r.parentNode) r.remove(); }, lifeSpan + 100);
         }
 
-        // === 新版擬真 AI：爆衝模式 (Scuttle) ===
+        // 擬真爆衝 AI (Scuttle)
         function scuttleGiant(r, currentX, currentY, endTime) {
              if (!r.parentNode || Date.now() >= endTime) {
                  if(r.parentNode) r.remove(); 
                  return;
              }
 
-             // 1. 有 30% 機率停下來思考人生 (靜止 200~500ms)
              if (Math.random() < 0.3) {
                  setTimeout(() => {
                      scuttleGiant(r, currentX, currentY, endTime);
                  }, 200 + Math.random() * 300);
-                 return; // 暫停這次移動
+                 return; 
              }
 
-             // 2. 決定爆衝目標點 (短距離隨機衝刺，約 150~400px)
              const burstDistance = 150 + Math.random() * 250;
-             const angle = Math.random() * Math.PI * 2; // 隨機方向
-             
+             const angle = Math.random() * Math.PI * 2; 
              let targetX = currentX + Math.cos(angle) * burstDistance;
              let targetY = currentY + Math.sin(angle) * burstDistance;
 
-             // 簡單的邊界反彈檢查 (避免一直衝出畫面太遠)
              const margin = 100;
              if (targetX < -margin || targetX > window.innerWidth + margin) targetX = currentX - Math.cos(angle) * burstDistance;
              if (targetY < -margin || targetY > window.innerHeight + margin) targetY = currentY - Math.sin(angle) * burstDistance;
              
              const dist = Math.hypot(targetX - currentX, targetY - currentY);
-             
-             // 3. 極速設定 (速度極快)
-             // 速度約為 2px/ms (即 2000px/秒)
              const speed = 2.0; 
-             const duration = Math.max(100, dist / speed); // 至少動 100ms
+             const duration = Math.max(100, dist / speed); 
 
-             // 4. 瞬間轉向
              const rotation = Math.atan2(targetY - currentY, targetX - currentX) * 180 / Math.PI + 90;
              r.style.transform = `translateZ(0) rotate(${rotation}deg)`;
-             
-             // 5. 套用爆衝動畫 (使用 cubic-bezier 模擬生物起步爆發力)
-             // transform 的轉向很快 (50ms)，位置移動使用貝茲曲線
              r.style.transition = `top ${duration}ms cubic-bezier(0.2, 0.8, 0.2, 1), left ${duration}ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 50ms linear`;
              r.style.left = targetX + 'px';
              r.style.top = targetY + 'px';
 
-             // 6. 移動結束後，遞迴呼叫下一次決定
              setTimeout(() => {
                  scuttleGiant(r, targetX, targetY, endTime);
              }, duration);
         }
 
-        // 一般蟑螂的舊版滑行 AI (維持不變)
         function roachBrain(r, cx, cy) { 
             if (!r.parentNode) return; 
             if (Math.hypot(state.btnX - cx, state.btnY - cy) < 50) { setTimeout(() => { if(r.parentNode) moveRoachTo(r, cx, cy, Math.random()>0.5?window.innerWidth+200:-200, Math.random()>0.5?window.innerHeight+200:-200, 500, () => r.remove()); }, 200); return; } 
