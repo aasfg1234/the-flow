@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.2 Layers & Chaos)</title>
+    <title>流逝：生存挑戰 (v5.5 Built-in Bot)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -86,7 +86,7 @@
         .is-me { text-decoration: underline; text-decoration-color: var(--muted-gold); text-underline-offset: 4px;}
         .loading { color: #aaa; text-align: center; font-size: 12px; font-weight: 300; letter-spacing: 2px;}
 
-        /* === 新增：層級 30：巨型蟑螂層 (在按鈕之下) === */
+        /* === 層級 30：巨型蟑螂層 === */
         #giant-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; overflow: hidden; }
 
         /* === 層級 160：核心按鈕 === */
@@ -112,12 +112,15 @@
         }
         #btn span { display: block; }
 
-        /* === 新增：層級 170：一般蟑螂層 (在按鈕之上) === */
+        /* === 層級 170：一般蟑螂層 === */
         #normal-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 170; pointer-events: none; overflow: hidden; }
         
-        /* 蟑螂通用樣式 */
+        /* === 蟑螂通用樣式 (SVG Data URI) === */
         .roach { 
-            position: absolute; font-size: 40px; 
+            position: absolute; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500'%3E%3Cpath fill='%233e2723' d='M250 80c-20-40-50-60-50-60s-10-20-5-30 20-10 30 0c0 0 10 10 25 10s25-10 25-10 25-10 30 0 5 20-5 30-30 20-50 60z'/%3E%3Cpath fill='%233e2723' d='M250 80c-40 0-70 40-80 100-10 60 10 200 80 280 70-80 90-220 80-280-10-60-40-100-80-100z'/%3E%3Cpath stroke='%233e2723' stroke-width='8' fill='none' d='M180 120c-40-20-80 0-100 20M320 120c40-20 80 0 100 20M170 180c-50-10-100 20-120 50M330 180c50-10 100 20 120 50M180 250c-50 10-90 60-100 100M320 250c50 10 90 60 100 100'/%3E%3Cpath stroke='%235d4037' stroke-width='2' fill='none' d='M250 80v380' opacity='0.3'/%3E%3C/svg%3E");
+            width: 64px; height: 64px;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
             transform: translateZ(0); will-change: transform, top, left; 
             contain: layout style; transition: transform 0.1s linear; 
         }
@@ -142,9 +145,12 @@
             z-index: 60; pointer-events: none; transition: opacity 0.3s;
         }
 
+        /* === 玩家 ID (外掛觸發點) === */
         #player-id-display { 
             position: absolute; top: 30px; right: 30px; 
-            font-size: 11px; color: #aaa; pointer-events: auto; 
+            font-size: 11px; color: #aaa; 
+            pointer-events: auto; /* 允許點擊 */
+            cursor: pointer; user-select: none;
             letter-spacing: 1px; font-family: sans-serif; z-index: 60;
             text-align: right;
         }
@@ -257,7 +263,8 @@
         <button onclick="saveName()">進入</button>
     </div>
 
-    <div id="player-id-display"></div>
+    <div id="player-id-display" onclick="triggerGodMode()"></div>
+    
     <div id="timer">0.00 <small>SECONDS</small></div>
     <div id="msg"></div>
 
@@ -279,7 +286,6 @@
         const INITIAL_TIME_OFFSET = 1;
 
         const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg');
-        // 更新為兩個蟑螂層
         const giantLayer = document.getElementById('giant-layer'), normalLayer = document.getElementById('normal-layer');
         const bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
         const scoreList = document.getElementById('scoreList'), nameModal = document.getElementById('name-modal'), inputName = document.getElementById('playerNameInput'), idDisplay = document.getElementById('player-id-display');
@@ -292,6 +298,11 @@
         let globalPlayCount = 0; 
         let globalPlayTime = 0;
         let isSubmitting = false;
+        
+        // === 外掛變數 ===
+        let isGodMode = false;
+        let godModeClicks = 0;
+        let godModeTimer = null;
 
         if(playerName) inputName.value = playerName;
 
@@ -312,6 +323,38 @@
         }
         function toggleDebug() { debugLog.style.display = debugLog.style.display === 'none' ? 'block' : 'none'; }
         function setStatus(color) { statusLight.style.background = color; }
+
+        // === 上帝模式觸發器 ===
+        function triggerGodMode() {
+            godModeClicks++;
+            if (godModeTimer) clearTimeout(godModeTimer);
+            
+            // 必須在 1 秒內連點
+            godModeTimer = setTimeout(() => {
+                godModeClicks = 0;
+            }, 1000);
+
+            if (godModeClicks >= 5) {
+                isGodMode = !isGodMode;
+                godModeClicks = 0;
+                // 視覺回饋：藍燈=開啟，灰燈=關閉
+                if(isGodMode) {
+                    setStatus('#00f'); // 藍色
+                    log("🔰 GOD MODE ACTIVATED");
+                    // 強制開始 (如果還沒開始)
+                    if (!state.isPlaying) {
+                        const evt = new MouseEvent('mousedown', {
+                            clientX: window.innerWidth / 2,
+                            clientY: window.innerHeight / 2
+                        });
+                        window.dispatchEvent(evt);
+                    }
+                } else {
+                    setStatus('#ccc'); // 恢復灰色
+                    log("🔰 GOD MODE OFF");
+                }
+            }
+        }
 
         let state = {
             isPlaying: false, startTime: 0,
@@ -377,24 +420,34 @@
 
         function gameLoop() {
             if (!state.isPlaying) return;
+            
+            // === 上帝模式邏輯 ===
+            if (isGodMode) {
+                // 自動將手指位置鎖定在按鈕中心
+                state.fingerX = state.btnX;
+                state.fingerY = state.btnY - 20; // 包含視差修正
+            }
+
             const elapsed = (Date.now() - state.startTime) / 1000;
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
             state.currentRadius = elapsed < CFG.shrinkTime ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
             
-            // 一般蟑螂 (加入到 normalLayer)
+            // Random Roach
             if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && normalLayer.childElementCount < CFG.maxRoaches) spawnRoach();
             
+            // System Error
             if (elapsed > state.nextErrorTime) {
                 spawnError();
                 state.nextErrorTime += 15;
             }
 
+            // Fake Battery
             if (elapsed > state.nextBatteryTime) {
                 batteryOverlay.style.display = 'flex';
                 state.nextBatteryTime += 22.5; 
                 setTimeout(() => { batteryOverlay.style.display = 'none'; }, 3000);
             }
-            // 巨型蟑螂
+            // Giant Roach
             if (elapsed > state.nextGiantRoachTime) {
                 spawnGiantRoach();
                 state.nextGiantRoachTime += 28;
@@ -409,11 +462,13 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
+            // Stable Opacity
             state.btnOpacity = 0.9;
             btn.style.opacity = state.btnOpacity;
             
             updateBtnStyle();
             
+            // Y-offset 20px for Parallax
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
@@ -430,67 +485,74 @@
             setTimeout(() => { if(err.parentNode) err.remove(); }, 3000);
         }
 
-        // 一般蟑螂 (在按鈕之上)
         function spawnRoach() { 
-            const r = document.createElement('div'); r.innerText = '🪳'; r.className = 'roach'; 
-            r.style.fontSize = `${30 + Math.random() * 50}px`; 
-            const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 100; 
+            const r = document.createElement('div'); r.className = 'roach'; 
+            const size = 64 + Math.random() * 64;
+            r.style.width = size + 'px';
+            r.style.height = size + 'px';
+            
+            const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 150; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
             r.style.left=x+'px'; r.style.top=y+'px'; 
-            // 加入到 normalLayer
             normalLayer.appendChild(r); 
             roachBrain(r, x, y); 
         }
 
-        // 巨型蟑螂 (在按鈕之下，隨機亂竄 5 秒)
         function spawnGiantRoach() {
-            const r = document.createElement('div'); r.innerText = '🪳'; r.className = 'roach'; 
-            r.style.fontSize = '350px'; r.style.opacity = '0.9';
+            const r = document.createElement('div'); r.className = 'roach'; 
+            r.style.width = '350px';
+            r.style.height = '350px';
+            r.style.opacity = '0.9';
+            
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 400; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
             r.style.left=x+'px'; r.style.top=y+'px'; 
             
-            // 加入到 giantLayer
             giantLayer.appendChild(r); 
             
-            // 設定 5 秒生命週期
             const lifeSpan = 5000; 
             const endTime = Date.now() + lifeSpan;
-            
-            // 開始暴走
-            moveGiantChaos(r, x, y, endTime);
-
-            // 時間到強制移除 (雙重保險)
+            scuttleGiant(r, x, y, endTime);
             setTimeout(() => { if(r.parentNode) r.remove(); }, lifeSpan + 100);
         }
 
-        // 巨型蟑螂的暴走 AI
-        function moveGiantChaos(r, currentX, currentY, endTime) {
+        function scuttleGiant(r, currentX, currentY, endTime) {
              if (!r.parentNode || Date.now() >= endTime) {
-                 if(r.parentNode) r.remove(); // 時間到，消失
+                 if(r.parentNode) r.remove(); 
                  return;
              }
 
-             // 在螢幕內隨機選一個目標點
-             const targetX = Math.random() * window.innerWidth;
-             const targetY = Math.random() * window.innerHeight;
+             if (Math.random() < 0.3) {
+                 setTimeout(() => {
+                     scuttleGiant(r, currentX, currentY, endTime);
+                 }, 200 + Math.random() * 300);
+                 return; 
+             }
+
+             const burstDistance = 150 + Math.random() * 250;
+             const angle = Math.random() * Math.PI * 2; 
+             let targetX = currentX + Math.cos(angle) * burstDistance;
+             let targetY = currentY + Math.sin(angle) * burstDistance;
+
+             const margin = 100;
+             if (targetX < -margin || targetX > window.innerWidth + margin) targetX = currentX - Math.cos(angle) * burstDistance;
+             if (targetY < -margin || targetY > window.innerHeight + margin) targetY = currentY - Math.sin(angle) * burstDistance;
              
              const dist = Math.hypot(targetX - currentX, targetY - currentY);
-             const speed = 0.8; // 設定一個固定的高速度 (像素/毫秒)
-             const duration = Math.max(300, dist / speed); // 計算移動所需時間，至少 300ms
+             const speed = 2.0; 
+             const duration = Math.max(100, dist / speed); 
 
-             r.style.transform = `translateZ(0) rotate(${Math.atan2(targetY-currentY, targetX-currentX)*180/Math.PI + 90}deg)`;
-             r.style.transition = `top ${duration}ms linear, left ${duration}ms linear`;
+             const rotation = Math.atan2(targetY - currentY, targetX - currentX) * 180 / Math.PI + 90;
+             r.style.transform = `translateZ(0) rotate(${rotation}deg)`;
+             r.style.transition = `top ${duration}ms cubic-bezier(0.2, 0.8, 0.2, 1), left ${duration}ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 50ms linear`;
              r.style.left = targetX + 'px';
              r.style.top = targetY + 'px';
 
-             // 移動結束後，立刻進行下一次移動，直到時間結束
              setTimeout(() => {
-                 moveGiantChaos(r, targetX, targetY, endTime);
+                 scuttleGiant(r, targetX, targetY, endTime);
              }, duration);
         }
 
-        // 一般蟑螂的躲避 AI (保持不變)
         function roachBrain(r, cx, cy) { 
             if (!r.parentNode) return; 
             if (Math.hypot(state.btnX - cx, state.btnY - cy) < 50) { setTimeout(() => { if(r.parentNode) moveRoachTo(r, cx, cy, Math.random()>0.5?window.innerWidth+200:-200, Math.random()>0.5?window.innerHeight+200:-200, 500, () => r.remove()); }, 200); return; } 
@@ -535,7 +597,6 @@
             state.nextErrorTime = 7;
             state.nextBatteryTime = 22.5; 
             state.nextGiantRoachTime = 28; 
-            // 清空兩個蟑螂層
             giantLayer.innerHTML = ''; 
             normalLayer.innerHTML = ''; 
             errorLayer.innerHTML = ''; 
