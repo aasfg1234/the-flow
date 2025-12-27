@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.1 Performance)</title>
+    <title>流逝：生存挑戰 (v5.2 Layers & Chaos)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -33,9 +33,7 @@
             position: absolute; top: 90px; left: 45px;
             width: 12px; height: 12px; border-radius: 50%;
             background: #ccc; z-index: 300;
-            /* 移除陰影以提升效能 */
-            transition: background 0.3s;
-            cursor: pointer;
+            transition: background 0.3s; cursor: pointer;
         }
         #debug-log {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
@@ -48,14 +46,13 @@
         #zen-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 0; overflow: hidden;
-            /* 靜態背景圖，不影響效能 */
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
         }
         #zen-bg::before {
             content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: radial-gradient(circle at 50% 50%, rgba(141, 163, 153, 0.1), transparent 60%);
             animation: breathe 10s ease-in-out infinite alternate;
-            will-change: transform, opacity; /* 提示瀏覽器優化 */
+            will-change: transform, opacity;
         }
         @keyframes breathe { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 0.8; } }
 
@@ -74,7 +71,6 @@
         #leaderboard {
             position: absolute; bottom: 40px;
             background: rgba(255, 255, 255, 0.4);
-            /* 移除 backdrop-filter 以提升低階手機效能 */
             border: 1px solid rgba(0,0,0,0.05); padding: 25px; 
             text-align: left; width: 80%; max-width: 300px;
             pointer-events: auto; border-radius: 2px;
@@ -90,7 +86,10 @@
         .is-me { text-decoration: underline; text-decoration-color: var(--muted-gold); text-underline-offset: 4px;}
         .loading { color: #aaa; text-align: center; font-size: 12px; font-weight: 300; letter-spacing: 2px;}
 
-        /* === 層級 160：核心按鈕 (效能優化版) === */
+        /* === 新增：層級 30：巨型蟑螂層 (在按鈕之下) === */
+        #giant-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; overflow: hidden; }
+
+        /* === 層級 160：核心按鈕 === */
         #btn {
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -98,21 +97,12 @@
             text-align: center;
             position: absolute; 
             z-index: 160;
-            
-            /* 初始位置設在 0,0，之後全靠 transform 移動 */
             top: 0; left: 0; 
-            
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
-            /* 移除 box-shadow，這是效能殺手 */
-            /* box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4); */
-            
             transition: background-color 0.5s; 
             display: none; 
-            
-            /* 告訴瀏覽器這些屬性會變，請開 GPU 加速 */
             will-change: transform, width, height;
-            
             font-family: var(--font-serif); 
             font-weight: 300; 
             font-size: 18px; 
@@ -121,18 +111,24 @@
             opacity: 0.9;
         }
         #btn span { display: block; }
-        /* 移除 ripple 動畫，減少重繪負擔 */
+
+        /* === 新增：層級 170：一般蟑螂層 (在按鈕之上) === */
+        #normal-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 170; pointer-events: none; overflow: hidden; }
+        
+        /* 蟑螂通用樣式 */
+        .roach { 
+            position: absolute; font-size: 40px; 
+            transform: translateZ(0); will-change: transform, top, left; 
+            contain: layout style; transition: transform 0.1s linear; 
+        }
 
         /* === 層級 45：UI 計時器 === */
         #timer {
             position: absolute; top: 10%; 
             font-size: 3.5rem; font-weight: 300; 
             color: var(--ink-black); letter-spacing: 2px; opacity: 0.8;
-            z-index: 45;
-            pointer-events: none;
-            text-align: center; width: 100%;
-            /* 減少文字陰影模糊半徑 */
-            text-shadow: 0 0 5px var(--paper-bg); 
+            z-index: 45; pointer-events: none;
+            text-align: center; width: 100%; text-shadow: 0 0 5px var(--paper-bg); 
         }
         #timer small { font-size: 0.9rem; color: var(--sage-green); display:block; margin-top: 5px; text-transform: uppercase; }
 
@@ -155,25 +151,15 @@
         .global-count { color: var(--muted-gold); margin-left: 5px; }
         .global-time { color: var(--sage-green); margin-left: 5px; font-weight: bold; }
 
-        /* === 層級 100：蟑螂層 === */
-        #roach-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; overflow: hidden; }
-        .roach { 
-            position: absolute; font-size: 40px; 
-            transform: translateZ(0); /* 強制 GPU */
-            will-change: transform, top, left; 
-            contain: layout style; transition: transform 0.1s linear; 
-        }
-
-        /* === 層級 150：假低電量彈窗 (效能優化版) === */
+        /* === 層級 150：假低電量彈窗 === */
         #battery-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* 移除 backdrop-filter (blur)，這在手機上超級卡 */
             background: rgba(0,0,0,0.3); 
             z-index: 150; display: none;
             align-items: center; justify-content: center;
         }
         .ios-alert {
-            width: 270px; background: #f2f2f2; /* 純色背景 */
+            width: 270px; background: #f2f2f2;
             border-radius: 14px; text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -195,15 +181,10 @@
             z-index: 40; pointer-events: none; overflow: hidden;
         }
         .error-popup {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.9);
-            color: #ff3333;
-            border: 1px solid #ff3333;
-            padding: 10px 15px;
-            font-family: monospace;
-            font-size: 12px;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-            max-width: 200px;
+            position: absolute; background: rgba(0, 0, 0, 0.9); color: #ff3333;
+            border: 1px solid #ff3333; padding: 10px 15px;
+            font-family: monospace; font-size: 12px;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); max-width: 200px;
             animation: glitch-pop 0.2s ease-out;
         }
         .error-popup h4 { margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ff3333; padding-bottom: 3px; }
@@ -246,8 +227,7 @@
     
     <div id="error-layer"></div>
     
-    <div id="roach-layer"></div>
-    <div id="zen-bg"></div>
+    <div id="giant-layer"></div> <div id="normal-layer"></div> <div id="zen-bg"></div>
 
     <div id="battery-overlay" ontouchstart="event.stopPropagation()">
         <div class="ios-alert">
@@ -298,7 +278,10 @@
         const CFG = { startRadius: 130, minRadius: 60, shrinkTime: 90, maxRoaches: 100 };
         const INITIAL_TIME_OFFSET = 1;
 
-        const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg'), roachLayer = document.getElementById('roach-layer'), bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
+        const btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer'), msgDisplay = document.getElementById('msg');
+        // 更新為兩個蟑螂層
+        const giantLayer = document.getElementById('giant-layer'), normalLayer = document.getElementById('normal-layer');
+        const bgm = document.getElementById('bgm'), muteBtn = document.getElementById('mute-btn');
         const scoreList = document.getElementById('scoreList'), nameModal = document.getElementById('name-modal'), inputName = document.getElementById('playerNameInput'), idDisplay = document.getElementById('player-id-display');
         const statusLight = document.getElementById('status-light'), debugLog = document.getElementById('debug-log');
         const errorLayer = document.getElementById('error-layer');
@@ -398,7 +381,8 @@
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
             state.currentRadius = elapsed < CFG.shrinkTime ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
             
-            if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && roachLayer.childElementCount < CFG.maxRoaches) spawnRoach();
+            // 一般蟑螂 (加入到 normalLayer)
+            if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && normalLayer.childElementCount < CFG.maxRoaches) spawnRoach();
             
             if (elapsed > state.nextErrorTime) {
                 spawnError();
@@ -410,6 +394,7 @@
                 state.nextBatteryTime += 22.5; 
                 setTimeout(() => { batteryOverlay.style.display = 'none'; }, 3000);
             }
+            // 巨型蟑螂
             if (elapsed > state.nextGiantRoachTime) {
                 spawnGiantRoach();
                 state.nextGiantRoachTime += 28;
@@ -424,9 +409,11 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
+            state.btnOpacity = 0.9;
+            btn.style.opacity = state.btnOpacity;
+            
             updateBtnStyle();
             
-            // 判定偏移 20px (Parallax Fix)
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
@@ -443,24 +430,67 @@
             setTimeout(() => { if(err.parentNode) err.remove(); }, 3000);
         }
 
+        // 一般蟑螂 (在按鈕之上)
         function spawnRoach() { 
             const r = document.createElement('div'); r.innerText = '🪳'; r.className = 'roach'; 
             r.style.fontSize = `${30 + Math.random() * 50}px`; 
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 100; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
             r.style.left=x+'px'; r.style.top=y+'px'; 
-            roachLayer.appendChild(r); roachBrain(r, x, y); 
+            // 加入到 normalLayer
+            normalLayer.appendChild(r); 
+            roachBrain(r, x, y); 
         }
 
+        // 巨型蟑螂 (在按鈕之下，隨機亂竄 5 秒)
         function spawnGiantRoach() {
             const r = document.createElement('div'); r.innerText = '🪳'; r.className = 'roach'; 
             r.style.fontSize = '350px'; r.style.opacity = '0.9';
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 400; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
             r.style.left=x+'px'; r.style.top=y+'px'; 
-            roachLayer.appendChild(r); roachBrain(r, x, y); 
+            
+            // 加入到 giantLayer
+            giantLayer.appendChild(r); 
+            
+            // 設定 5 秒生命週期
+            const lifeSpan = 5000; 
+            const endTime = Date.now() + lifeSpan;
+            
+            // 開始暴走
+            moveGiantChaos(r, x, y, endTime);
+
+            // 時間到強制移除 (雙重保險)
+            setTimeout(() => { if(r.parentNode) r.remove(); }, lifeSpan + 100);
         }
 
+        // 巨型蟑螂的暴走 AI
+        function moveGiantChaos(r, currentX, currentY, endTime) {
+             if (!r.parentNode || Date.now() >= endTime) {
+                 if(r.parentNode) r.remove(); // 時間到，消失
+                 return;
+             }
+
+             // 在螢幕內隨機選一個目標點
+             const targetX = Math.random() * window.innerWidth;
+             const targetY = Math.random() * window.innerHeight;
+             
+             const dist = Math.hypot(targetX - currentX, targetY - currentY);
+             const speed = 0.8; // 設定一個固定的高速度 (像素/毫秒)
+             const duration = Math.max(300, dist / speed); // 計算移動所需時間，至少 300ms
+
+             r.style.transform = `translateZ(0) rotate(${Math.atan2(targetY-currentY, targetX-currentX)*180/Math.PI + 90}deg)`;
+             r.style.transition = `top ${duration}ms linear, left ${duration}ms linear`;
+             r.style.left = targetX + 'px';
+             r.style.top = targetY + 'px';
+
+             // 移動結束後，立刻進行下一次移動，直到時間結束
+             setTimeout(() => {
+                 moveGiantChaos(r, targetX, targetY, endTime);
+             }, duration);
+        }
+
+        // 一般蟑螂的躲避 AI (保持不變)
         function roachBrain(r, cx, cy) { 
             if (!r.parentNode) return; 
             if (Math.hypot(state.btnX - cx, state.btnY - cy) < 50) { setTimeout(() => { if(r.parentNode) moveRoachTo(r, cx, cy, Math.random()>0.5?window.innerWidth+200:-200, Math.random()>0.5?window.innerHeight+200:-200, 500, () => r.remove()); }, 200); return; } 
@@ -505,7 +535,9 @@
             state.nextErrorTime = 7;
             state.nextBatteryTime = 22.5; 
             state.nextGiantRoachTime = 28; 
-            roachLayer.innerHTML = ''; 
+            // 清空兩個蟑螂層
+            giantLayer.innerHTML = ''; 
+            normalLayer.innerHTML = ''; 
             errorLayer.innerHTML = ''; 
             msgDisplay.style.opacity = '0';
             batteryOverlay.style.display = 'none';
@@ -515,12 +547,10 @@
         }
 
         function updateBtnStyle() { 
-            // 核心修改：使用 transform: translate3d 全程 GPU 加速移動
             const r = state.currentRadius; 
             btn.style.width = (r * 2) + 'px'; 
             btn.style.height = (r * 2) + 'px';
             btn.style.fontSize = Math.max(14, r/4.5) + 'px'; 
-            // 關鍵：將中心點校正交給 CSS transform，避免 JS 計算時的抖動
             btn.style.transform = `translate3d(${state.btnX}px, ${state.btnY}px, 0) translate(-50%, -50%)`;
         }
         function moveFinger(e) { if (state.isPlaying) { const p = e.touches ? e.touches[0] : e; state.fingerX = p.clientX; state.fingerY = p.clientY; e.preventDefault(); } }
