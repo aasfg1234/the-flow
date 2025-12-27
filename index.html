@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.5 Fix)</title>
+    <title>流逝：生存挑戰 (v5.6 God Mode Fix)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -103,7 +103,7 @@
             top: 0; left: 0; 
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
-            transition: background-color 0.5s, transform 0.1s; /* 加入 transform 動畫 */
+            transition: background-color 0.5s; 
             display: none; 
             will-change: transform, width, height;
             font-family: var(--font-serif); 
@@ -114,7 +114,8 @@
             opacity: 0.9;
         }
         #btn:active {
-            transform: translate3d(-50%, -50%, 0) scale(0.95) !important; /* 按下回饋 */
+            /* 按下回饋 */
+            transform: translate3d(-50%, -50%, 0) scale(0.95); 
         }
         #btn span { display: block; }
 
@@ -124,16 +125,15 @@
             z-index: 170; pointer-events: none !important; overflow: hidden; 
         }
         
-        /* === 蟑螂通用樣式 (SVG 修復版) === */
+        /* === 蟑螂通用樣式 === */
         .roach { 
             position: absolute; 
-            /* 使用更安全的 SVG 編碼 */
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233e2723'%3E%3Cpath d='M12 2c-3 0-5 2-5 5v2c-2 0-3 1.5-3 3 0 1.5.5 3 1.5 4C4.5 17.5 3 20 3 20s2.5 0 5-2c1 1 2.5 1 4 1s3 0 4-1c2.5 2 5 2 5 2s-1.5-2.5-2.5-4c1-1 1.5-2.5 1.5-4 0-1.5-1-3-3-3V7c0-3-2-5-5-5z'/%3E%3Cpath fill='none' stroke='%233e2723' stroke-width='1' d='M7 9C5 8 2 9 2 9M17 9c2-1 5 0 5 0M7 13c-2-.5-4 0-4 0M17 13c2-.5 4 0 4 0'/%3E%3C/svg%3E");
             width: 64px; height: 64px;
             background-size: contain; background-repeat: no-repeat; background-position: center;
             transform: translateZ(0); will-change: transform, top, left; 
             contain: layout style; transition: transform 0.1s linear; 
-            pointer-events: none !important; /* 再次確保不擋點擊 */
+            pointer-events: none !important; 
         }
 
         /* === 層級 45：UI 計時器 === */
@@ -156,12 +156,28 @@
             z-index: 60; pointer-events: none; transition: opacity 0.3s;
         }
 
+        /* === 玩家 ID (外掛觸發點 - 修復版) === */
         #player-id-display { 
             position: absolute; top: 30px; right: 30px; 
-            font-size: 11px; color: #aaa; pointer-events: auto; 
-            letter-spacing: 1px; font-family: sans-serif; z-index: 60;
+            font-size: 11px; color: #aaa; 
+            
+            /* 核心修改：加大觸控區，圖層置頂 */
+            padding: 20px; 
+            margin: -20px; /* 抵消 padding 避免位移 */
+            z-index: 400; 
+            
+            pointer-events: auto; cursor: pointer; user-select: none;
+            letter-spacing: 1px; font-family: sans-serif;
             text-align: right;
+            border-radius: 10px;
+            transition: background 0.1s, color 0.1s;
         }
+        /* 點擊回饋 */
+        #player-id-display:active {
+            background: rgba(0,0,0,0.05);
+            color: var(--ink-black);
+        }
+
         .global-count { color: var(--muted-gold); margin-left: 5px; }
         .global-time { color: var(--sage-green); margin-left: 5px; font-weight: bold; }
 
@@ -271,7 +287,8 @@
         <button onclick="saveName()">進入</button>
     </div>
 
-    <div id="player-id-display"></div>
+    <div id="player-id-display" onclick="triggerGodMode()"></div>
+    
     <div id="timer">0.00 <small>SECONDS</small></div>
     <div id="msg"></div>
 
@@ -305,6 +322,11 @@
         let globalPlayCount = 0; 
         let globalPlayTime = 0;
         let isSubmitting = false;
+        
+        // === 外掛變數 ===
+        let isGodMode = false;
+        let godModeClicks = 0;
+        let godModeTimer = null;
 
         if(playerName) inputName.value = playerName;
 
@@ -325,6 +347,35 @@
         }
         function toggleDebug() { debugLog.style.display = debugLog.style.display === 'none' ? 'block' : 'none'; }
         function setStatus(color) { statusLight.style.background = color; }
+
+        // === 上帝模式觸發器 ===
+        function triggerGodMode() {
+            godModeClicks++;
+            if (godModeTimer) clearTimeout(godModeTimer);
+            
+            godModeTimer = setTimeout(() => {
+                godModeClicks = 0;
+            }, 1000);
+
+            if (godModeClicks >= 5) {
+                isGodMode = !isGodMode;
+                godModeClicks = 0;
+                if(isGodMode) {
+                    setStatus('#00f'); // 藍色
+                    log("🔰 GOD MODE ACTIVATED");
+                    if (!state.isPlaying) {
+                        const evt = new MouseEvent('mousedown', {
+                            clientX: window.innerWidth / 2,
+                            clientY: window.innerHeight / 2
+                        });
+                        window.dispatchEvent(evt);
+                    }
+                } else {
+                    setStatus('#ccc'); // 灰色
+                    log("🔰 GOD MODE OFF");
+                }
+            }
+        }
 
         let state = {
             isPlaying: false, startTime: 0,
@@ -390,6 +441,13 @@
 
         function gameLoop() {
             if (!state.isPlaying) return;
+            
+            // === 上帝模式邏輯 ===
+            if (isGodMode) {
+                state.fingerX = state.btnX;
+                state.fingerY = state.btnY - 20; 
+            }
+
             const elapsed = (Date.now() - state.startTime) / 1000;
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
             state.currentRadius = elapsed < CFG.shrinkTime ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
@@ -403,6 +461,7 @@
                 state.nextErrorTime += 15;
             }
 
+            // Fake Battery
             if (elapsed > state.nextBatteryTime) {
                 batteryOverlay.style.display = 'flex';
                 state.nextBatteryTime += 22.5; 
@@ -423,6 +482,7 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
+            // Stable Opacity
             state.btnOpacity = 0.9;
             btn.style.opacity = state.btnOpacity;
             
