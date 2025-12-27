@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.5 Anti-Cheat)</title>
+    <title>流逝：生存挑戰 (v4.6 Visual Fix)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -87,7 +87,7 @@
         .is-me { text-decoration: underline; text-decoration-color: var(--muted-gold); text-underline-offset: 4px;}
         .loading { color: #aaa; text-align: center; font-size: 12px; font-weight: 300; letter-spacing: 2px;}
 
-        /* === 層級 50：核心按鈕 === */
+        /* === 層級 50：核心按鈕 (關鍵修改：移除 width/height 的 transition) === */
         #btn {
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -99,8 +99,9 @@
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
             box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
-            transition: width 0.1s, height 0.1s, background-color 0.5s; 
-            display: none; will-change: transform, opacity;
+            /* 修改處：只保留 background-color 的過渡，移除尺寸過渡以確保物理同步 */
+            transition: background-color 0.5s; 
+            display: none; will-change: transform, width, height, opacity;
             
             font-family: var(--font-serif); 
             font-weight: 300; 
@@ -303,10 +304,9 @@
         let lastTouchEnd = 0;
         document.addEventListener('touchend', e => { if (Date.now() - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = Date.now(); }, false);
 
-        // === 新增：防切視窗偵測 ===
+        // 防作弊：切換視窗視為死亡
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && state.isPlaying) {
-                // 如果在遊戲中切換視窗，直接 Game Over
                 gameOver((Date.now() - state.startTime) / 1000);
             }
         });
@@ -485,7 +485,6 @@
                 log("讀取: " + e.message);
                 if(e.message.includes("429")) setStatus('#ff0'); 
                 else setStatus('#f00');
-                // 標記讀取失敗，防止寫入
                 return { scores: [], global_play_count: globalPlayCount, global_play_time: globalPlayTime, success: false };
             });
         }
@@ -510,7 +509,6 @@
             log("準備上傳...");
             
             safeFetch().then(data => {
-                // 安全鎖：如果讀取失敗，禁止寫入
                 if (!data.success) {
                     throw new Error("讀取失敗，為保護資料拒絕存檔");
                 }
@@ -524,7 +522,6 @@
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
                 
-                // 保留 100 筆
                 list = list.slice(0, 100); 
 
                 log(`寫入: Rank=${list.length}, Global=${gCount}, Time=${gTime}`);
