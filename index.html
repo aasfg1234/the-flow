@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.2.1 Safe Flow)</title>
+    <title>流逝：生存挑戰 (v4.5 Anti-Cheat)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -303,6 +303,14 @@
         let lastTouchEnd = 0;
         document.addEventListener('touchend', e => { if (Date.now() - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = Date.now(); }, false);
 
+        // === 新增：防切視窗偵測 ===
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.isPlaying) {
+                // 如果在遊戲中切換視窗，直接 Game Over
+                gameOver((Date.now() - state.startTime) / 1000);
+            }
+        });
+
         function toggleMute() { isMuted = !isMuted; bgm.muted = isMuted; muteBtn.innerText = isMuted ? "🔇" : "🔊"; }
 
         setTimeout(() => {
@@ -460,7 +468,6 @@
         }
         function moveFinger(e) { if (state.isPlaying) { const p = e.touches ? e.touches[0] : e; state.fingerX = p.clientX; state.fingerY = p.clientY; e.preventDefault(); } }
 
-        // === 關鍵修改：safeFetch 會回傳 success 狀態 ===
         function safeFetch() {
             const bustedUrl = PROXY_BASE + encodeURIComponent(TARGET_URL + `?_t=${Date.now()}`);
             return fetch(bustedUrl).then(res => {
@@ -470,7 +477,6 @@
             })
             .then(data => {
                 setStatus('#0f0'); 
-                // 標記讀取成功
                 data.success = true;
                 if (Array.isArray(data)) return { scores: [], global_play_count: 0, global_play_time: 0, success: true };
                 return data || { scores: [], global_play_count: 0, global_play_time: 0, success: true };
@@ -479,7 +485,7 @@
                 log("讀取: " + e.message);
                 if(e.message.includes("429")) setStatus('#ff0'); 
                 else setStatus('#f00');
-                // 標記讀取失敗
+                // 標記讀取失敗，防止寫入
                 return { scores: [], global_play_count: globalPlayCount, global_play_time: globalPlayTime, success: false };
             });
         }
@@ -489,7 +495,7 @@
             safeFetch().then(data => {
                 let cleanScores = (data.scores || []).filter(e => e.signature && e.signature === generateSignature(e.name, e.score));
                 renderLeaderboard(cleanScores); 
-                if (data.success) { // 只在成功時更新全域變數，避免被 false 蓋掉
+                if (data.success) { 
                     globalPlayCount = data.global_play_count || 0;
                     globalPlayTime = data.global_play_time || 0;
                     updateIDDisplay();
@@ -504,7 +510,7 @@
             log("準備上傳...");
             
             safeFetch().then(data => {
-                // === 安全鎖：如果讀取失敗，禁止寫入 ===
+                // 安全鎖：如果讀取失敗，禁止寫入
                 if (!data.success) {
                     throw new Error("讀取失敗，為保護資料拒絕存檔");
                 }
@@ -540,7 +546,6 @@
             })
             .catch(e => {
                 log("中止: " + e.message);
-                // 顯示紅色錯誤訊息給玩家
                 msgDisplay.innerHTML = msgDisplay.innerHTML.replace("(紀錄中...)", "<span style='color:#ef5350; font-size:12px'>(網路不穩，未存檔)</span>");
                 isSubmitting = false;
             });
