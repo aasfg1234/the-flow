@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.0 Stable Core)</title>
+    <title>流逝：生存挑戰 (v5.1 Performance)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -28,13 +28,12 @@
             -webkit-touch-callout: none;
         }
 
-        /* === Debug Status Light (Moved for easier access) === */
+        /* === Debug 狀態燈 === */
         #status-light {
-            position: absolute; 
-            top: 90px; left: 45px;
+            position: absolute; top: 90px; left: 45px;
             width: 12px; height: 12px; border-radius: 50%;
             background: #ccc; z-index: 300;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            /* 移除陰影以提升效能 */
             transition: background 0.3s;
             cursor: pointer;
         }
@@ -45,20 +44,22 @@
             pointer-events: auto; white-space: pre-wrap;
         }
 
-        /* === Layer 0: Background === */
+        /* === 層級 0：背景 === */
         #zen-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 0; overflow: hidden;
+            /* 靜態背景圖，不影響效能 */
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
         }
         #zen-bg::before {
             content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: radial-gradient(circle at 50% 50%, rgba(141, 163, 153, 0.1), transparent 60%);
             animation: breathe 10s ease-in-out infinite alternate;
+            will-change: transform, opacity; /* 提示瀏覽器優化 */
         }
         @keyframes breathe { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 0.8; } }
 
-        /* === Audio Control === */
+        /* === 音效控制 === */
         #mute-btn {
             position: absolute; top: 30px; left: 30px; 
             z-index: 201; cursor: pointer;
@@ -69,15 +70,14 @@
             transition: 0.3s; background: rgba(255,255,255,0.2);
         }
 
-        /* === Layer 5: Leaderboard === */
+        /* === 層級 5：排行榜 === */
         #leaderboard {
             position: absolute; bottom: 40px;
             background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(5px);
+            /* 移除 backdrop-filter 以提升低階手機效能 */
             border: 1px solid rgba(0,0,0,0.05); padding: 25px; 
             text-align: left; width: 80%; max-width: 300px;
             pointer-events: auto; border-radius: 2px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
             z-index: 5; 
         }
         #leaderboard h3 { 
@@ -90,7 +90,7 @@
         .is-me { text-decoration: underline; text-decoration-color: var(--muted-gold); text-underline-offset: 4px;}
         .loading { color: #aaa; text-align: center; font-size: 12px; font-weight: 300; letter-spacing: 2px;}
 
-        /* === Layer 160: Core Button (Above fake battery alert) === */
+        /* === 層級 160：核心按鈕 (效能優化版) === */
         #btn {
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -98,33 +98,32 @@
             text-align: center;
             position: absolute; 
             z-index: 160;
+            
+            /* 初始位置設在 0,0，之後全靠 transform 移動 */
             top: 0; left: 0; 
+            
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
-            box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
-            /* Only animate color, remove size transition to fix wobble */
+            /* 移除 box-shadow，這是效能殺手 */
+            /* box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4); */
+            
             transition: background-color 0.5s; 
-            display: none; will-change: transform, width, height, opacity;
+            display: none; 
+            
+            /* 告訴瀏覽器這些屬性會變，請開 GPU 加速 */
+            will-change: transform, width, height;
             
             font-family: var(--font-serif); 
             font-weight: 300; 
             font-size: 18px; 
             letter-spacing: 2px;
             line-height: 1.4;
-            opacity: 0.9; /* Stable opacity */
-            
-            /* Center Anchor Technique */
-            transform: translate3d(-50%, -50%, 0);
+            opacity: 0.9;
         }
         #btn span { display: block; }
-        #btn::after {
-            content: ""; position: absolute; width: 100%; height: 100%;
-            border-radius: 50%; border: 1px solid var(--sage-green);
-            animation: ripple 2s infinite; opacity: 0;
-        }
-        @keyframes ripple { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+        /* 移除 ripple 動畫，減少重繪負擔 */
 
-        /* === Layer 45: UI Timer === */
+        /* === 層級 45：UI 計時器 === */
         #timer {
             position: absolute; top: 10%; 
             font-size: 3.5rem; font-weight: 300; 
@@ -132,18 +131,18 @@
             z-index: 45;
             pointer-events: none;
             text-align: center; width: 100%;
-            text-shadow: 0 0 20px var(--paper-bg); 
+            /* 減少文字陰影模糊半徑 */
+            text-shadow: 0 0 5px var(--paper-bg); 
         }
         #timer small { font-size: 0.9rem; color: var(--sage-green); display:block; margin-top: 5px; text-transform: uppercase; }
 
-        /* === Layer 60: Other UI === */
+        /* === 層級 60：其他 UI === */
         #msg {
             position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
             min-width: 220px; font-size: 18px; color: var(--ink-black); font-weight: 600; 
             opacity: 0; text-align: center; letter-spacing: 2px;
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.9); 
             padding: 20px 30px; border-radius: 50px; border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             z-index: 60; pointer-events: none; transition: opacity 0.3s;
         }
 
@@ -156,51 +155,44 @@
         .global-count { color: var(--muted-gold); margin-left: 5px; }
         .global-time { color: var(--sage-green); margin-left: 5px; font-weight: bold; }
 
-        /* === Layer 100: Roach Layer === */
+        /* === 層級 100：蟑螂層 === */
         #roach-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; overflow: hidden; }
         .roach { 
             position: absolute; font-size: 40px; 
-            text-shadow: 2px 2px 2px rgba(0,0,0,0.2);
-            transform: translateZ(0); will-change: transform, top, left; 
+            transform: translateZ(0); /* 強制 GPU */
+            will-change: transform, top, left; 
             contain: layout style; transition: transform 0.1s linear; 
         }
 
-        /* === Layer 150: Fake Battery Alert (iOS Style) === */
+        /* === 層級 150：假低電量彈窗 (效能優化版) === */
         #battery-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.2); backdrop-filter: blur(2px);
+            /* 移除 backdrop-filter (blur)，這在手機上超級卡 */
+            background: rgba(0,0,0,0.3); 
             z-index: 150; display: none;
             align-items: center; justify-content: center;
         }
         .ios-alert {
-            width: 270px; background: rgba(245,245,245,0.95);
+            width: 270px; background: #f2f2f2; /* 純色背景 */
             border-radius: 14px; text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        .ios-alert h4 {
-            margin: 20px 0 5px 0; font-size: 17px; font-weight: 600; color: #000;
-        }
-        .ios-alert p {
-            margin: 0 0 20px 0; font-size: 13px; color: #000;
-        }
-        .ios-btns {
-            border-top: 1px solid rgba(60,60,67,0.2);
-            display: flex; height: 44px;
-        }
+        .ios-alert h4 { margin: 20px 0 5px 0; font-size: 17px; font-weight: 600; color: #000; }
+        .ios-alert p { margin: 0 0 20px 0; font-size: 13px; color: #000; }
+        .ios-btns { border-top: 1px solid #ccc; display: flex; height: 44px; }
         .ios-btn {
             flex: 1; display: flex; align-items: center; justify-content: center;
             font-size: 17px; color: #007aff; cursor: pointer;
-            border-right: 1px solid rgba(60,60,67,0.2);
+            border-right: 1px solid #ccc;
         }
         .ios-btn:last-child { border-right: none; font-weight: 400; }
         .ios-btn:first-child { font-weight: 600; }
 
-        /* === Layer 40: System Error Popup === */
+        /* === 層級 40：系統錯誤彈窗 === */
         #error-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 40; 
-            pointer-events: none; overflow: hidden;
+            z-index: 40; pointer-events: none; overflow: hidden;
         }
         .error-popup {
             position: absolute;
@@ -217,7 +209,7 @@
         .error-popup h4 { margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ff3333; padding-bottom: 3px; }
         @keyframes glitch-pop { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
 
-        /* === Layer 200: Login Modal === */
+        /* === 層級 200：登入 === */
         #name-modal {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: var(--paper-bg); z-index: 200;
@@ -406,22 +398,18 @@
             timerDisplay.innerHTML = elapsed.toFixed(2) + " <small>SECONDS</small>";
             state.currentRadius = elapsed < CFG.shrinkTime ? CFG.startRadius - ((CFG.startRadius - CFG.minRadius) * (elapsed / CFG.shrinkTime)) : CFG.minRadius;
             
-            // Random Roach
             if (elapsed > 10 && Math.random() < (0.02 + (elapsed - 10) * 0.002) && roachLayer.childElementCount < CFG.maxRoaches) spawnRoach();
             
-            // System Error
             if (elapsed > state.nextErrorTime) {
                 spawnError();
                 state.nextErrorTime += 15;
             }
 
-            // Fake Battery
             if (elapsed > state.nextBatteryTime) {
                 batteryOverlay.style.display = 'flex';
                 state.nextBatteryTime += 22.5; 
                 setTimeout(() => { batteryOverlay.style.display = 'none'; }, 3000);
             }
-            // Giant Roach
             if (elapsed > state.nextGiantRoachTime) {
                 spawnGiantRoach();
                 state.nextGiantRoachTime += 28;
@@ -436,13 +424,9 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
-            // Stable Opacity (No flicker)
-            state.btnOpacity = 0.9;
-            btn.style.opacity = state.btnOpacity;
-            
             updateBtnStyle();
             
-            // Y-offset 20px for Parallax
+            // 判定偏移 20px (Parallax Fix)
             if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
@@ -526,18 +510,18 @@
             msgDisplay.style.opacity = '0';
             batteryOverlay.style.display = 'none';
             
-            btn.style.backgroundColor = "var(--sage-green)"; btn.style.boxShadow = "0 10px 30px rgba(141, 163, 153, 0.4)";
+            btn.style.backgroundColor = "var(--sage-green)"; 
             btn.innerHTML = "按著<br>隨圓"; btn.style.color = "#fff"; btn.style.opacity = 0.9; updateBtnStyle();
         }
 
         function updateBtnStyle() { 
-            // Fixed Center Anchoring
+            // 核心修改：使用 transform: translate3d 全程 GPU 加速移動
             const r = state.currentRadius; 
             btn.style.width = (r * 2) + 'px'; 
             btn.style.height = (r * 2) + 'px';
-            btn.style.left = state.btnX + 'px';
-            btn.style.top = state.btnY + 'px';
             btn.style.fontSize = Math.max(14, r/4.5) + 'px'; 
+            // 關鍵：將中心點校正交給 CSS transform，避免 JS 計算時的抖動
+            btn.style.transform = `translate3d(${state.btnX}px, ${state.btnY}px, 0) translate(-50%, -50%)`;
         }
         function moveFinger(e) { if (state.isPlaying) { const p = e.touches ? e.touches[0] : e; state.fingerX = p.clientX; state.fingerY = p.clientY; e.preventDefault(); } }
 
