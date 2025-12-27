@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v4.6 Visual Fix)</title>
+    <title>流逝：生存挑戰 (v4.7 Parallax Fix)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     
     <style>
@@ -87,7 +87,7 @@
         .is-me { text-decoration: underline; text-decoration-color: var(--muted-gold); text-underline-offset: 4px;}
         .loading { color: #aaa; text-align: center; font-size: 12px; font-weight: 300; letter-spacing: 2px;}
 
-        /* === 層級 50：核心按鈕 (關鍵修改：移除 width/height 的 transition) === */
+        /* === 層級 50：核心按鈕 === */
         #btn {
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -99,7 +99,6 @@
             cursor: crosshair; color: #fff;
             background: var(--sage-green);
             box-shadow: 0 10px 30px rgba(141, 163, 153, 0.4);
-            /* 修改處：只保留 background-color 的過渡，移除尺寸過渡以確保物理同步 */
             transition: background-color 0.5s; 
             display: none; will-change: transform, width, height, opacity;
             
@@ -368,26 +367,19 @@
             
             if (elapsed > 30) btn.style.backgroundColor = elapsed > 60 ? "var(--dusty-pink)" : "var(--muted-gold)";
             
-            if (elapsed > 10 && state.fadeMode === 0) { 
-                if (Math.random() < (0.005 + (elapsed-10)*0.0001)) { 
-                    state.fadeMode = 1; 
-                    state.fadeFloor = 0.25 + Math.random() * 0.25; 
-                } 
-            }
-            if (state.fadeMode === 1) { 
-                state.btnOpacity -= 0.005; 
-                if (state.btnOpacity <= state.fadeFloor) { state.btnOpacity = state.fadeFloor; state.fadeMode = 2; } 
-            }
-            else if (state.fadeMode === 2) { 
-                state.btnOpacity += 0.005; 
-                if (state.btnOpacity >= 0.9) { state.btnOpacity = 0.9; state.fadeMode = 0; } 
-            }
-            else { state.btnOpacity = 0.9; }
+            // === 核心修改：隨機擾動透明度 (Random Flux) ===
+            const chaos = Math.min(1, elapsed / 120); 
+            state.btnOpacity += (Math.random() - 0.5) * 0.15; 
+            const maxOp = 1.0 - (chaos * 0.6); 
+            const minOp = 0.8 - (chaos * 0.75); 
+            if (state.btnOpacity > maxOp) state.btnOpacity = maxOp;
+            if (state.btnOpacity < minOp) state.btnOpacity = minOp;
             btn.style.opacity = state.btnOpacity;
             
             updateBtnStyle();
             
-            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - state.btnY) > state.currentRadius + 40) gameOver(elapsed);
+            // === 關鍵修正：Y軸偏移 20px ===
+            if (Math.hypot(state.fingerX - state.btnX, state.fingerY - (state.btnY - 20)) > state.currentRadius + 40) gameOver(elapsed);
             if (state.isPlaying) loopId = requestAnimationFrame(gameLoop);
         }
 
@@ -518,7 +510,6 @@
                 let gTime = (data.global_play_time || 0) + newScore;
                 
                 const sig = generateSignature(playerName, newScore);
-                
                 list.push({ name: playerName, score: newScore, date: Date.now(), signature: sig });
                 list.sort((a, b) => b.score - a.score); 
                 
