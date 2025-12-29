@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>流逝：生存挑戰 (v5.7 Emoji Return)</title>
+    <title>流逝：生存挑戰 (v5.7 Image Return)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
@@ -124,13 +124,13 @@
             z-index: 170; pointer-events: none !important; overflow: hidden; 
         }
         
-        /* === 蟑螂通用樣式 (改回 Emoji) === */
+        /* === 蟑螂通用樣式 (改用圖片) === */
         .roach { 
             position: absolute; 
-            /* 移除 SVG 背景，改用文字 */
-            font-size: 40px; /* 預設大小，會被 JS 覆蓋 */
-            text-align: center;
-            line-height: 1;
+            background-image: url('image_0.png'); /* 使用提供的圖片 */
+            background-size: contain;
+            background-repeat: no-repeat;
+            /* 移除 font-size 和 text-align，改用 width 和 height 控制 */
             transform: translateZ(0); will-change: transform, top, left; 
             contain: layout style; transition: transform 0.1s linear; 
             pointer-events: none !important; 
@@ -496,9 +496,11 @@
 
         function spawnRoach() { 
             const r = document.createElement('div'); r.className = 'roach'; 
-            r.innerText = '🪳'; // 加入 Emoji
-            // 使用 font-size 控制大小
-            r.style.fontSize = `${30 + Math.random() * 50}px`;
+            // r.innerText = '🪳'; // 移除 Emoji
+            // 使用 width 和 height 控制大小
+            const size = 30 + Math.random() * 50;
+            r.style.width = `${size}px`;
+            r.style.height = `${size}px`;
             
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 150; 
             let x, y; if(s===0){x=Math.random()*w;y=-o}else if(s===1){x=w+o;y=Math.random()*h}else if(s===2){x=Math.random()*w;y=h+o}else{x=-o;y=Math.random()*h} 
@@ -509,9 +511,10 @@
 
         function spawnGiantRoach() {
             const r = document.createElement('div'); r.className = 'roach'; 
-            r.innerText = '🪳'; // 加入 Emoji
-            // 使用超大 font-size
-            r.style.fontSize = '350px';
+            // r.innerText = '🪳'; // 移除 Emoji
+            // 使用超大 width 和 height
+            r.style.width = '350px';
+            r.style.height = '350px';
             r.style.opacity = '0.9';
             
             const s = Math.floor(Math.random()*4), w = window.innerWidth, h = window.innerHeight, o = 400; 
